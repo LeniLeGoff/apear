@@ -28,7 +28,6 @@ public:
         _id(gen._id),
         _parents_ids(gen._parents_ids)
     {}
-    virtual ~Genome();
 
     /// This method deep copies the genome
     virtual Genome::Ptr clone() const = 0;

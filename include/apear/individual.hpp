@@ -41,28 +41,27 @@ public:
     Individual(){}
     Individual(const Genome::Ptr& morph_gen,const Genome::Ptr& ctrl_gen);
     Individual(const Individual& ind) :
-        outputs(ind.outputs),
-        objectives(ind.objectives),
-        morphology(ind.morphology),
-        control(ind.control),
-        learner(ind.learner),
-        parameters(ind.parameters),
-        randNum(ind.randNum),
-        individual_id(ind.individual_id),
-        generation(ind.generation)
+        _outputs(ind._outputs),
+        _objectives(ind._objectives),
+        _morphology(ind._morphology),
+        _control(ind._control),
+        _learner(ind._learner),
+        _parameters(ind._parameters),
+        _rand_num(ind._rand_num),
+        _individual_id(ind._individual_id),
+        _generation(ind._generation)
     {}
-    virtual ~Individual();
 
     virtual Individual::Ptr clone() = 0;
 
     virtual void init()
     {
-        morphGenome->init();
+        _morph_genome->init();
         createMorphology();
-        int instance_type = settings::getParameter<settings::Integer>(parameters,"#instanceType").value;
-        bool reload_ctrl = settings::getParameter<settings::Boolean>(parameters,"#reloadController").value;
-        if(control == nullptr || reload_ctrl){
-            ctrlGenome->init();
+        int instance_type = settings::getParameter<settings::Integer>(_parameters,"#instanceType").value;
+        bool reload_ctrl = settings::getParameter<settings::Boolean>(_parameters,"#reloadController").value;
+        if(_control == nullptr || reload_ctrl){
+            _ctrl_enome->init();
             createController();
         }
     }
@@ -70,8 +69,8 @@ public:
     virtual void update(double delta_time);
     virtual void mutate()
     {
-        morphGenome->mutate();
-        ctrlGenome->mutate();
+        _morph_genome->mutate();
+        _ctrl_enome->mutate();
     }
     virtual void crossover(const Individual::Ptr& partner, Individual *child);
     virtual void symmetrical_crossover(const Individual::Ptr& partner, Individual *child1, Individual *child2);
@@ -79,31 +78,31 @@ public:
 
     virtual Eigen::VectorXd descriptor(){return Eigen::VectorXd::Zero(1);}
 
-    void set_randNum(const misc::RandNum::Ptr &rn){randNum = rn;}
+    void set_rand_num(const misc::RandNum::Ptr &rn){_rand_num = rn;}
 
-    bool isInit(){return (control != nullptr && morphology != nullptr);}
+    bool is_init(){return (_control != nullptr && _morphology != nullptr);}
 
     //Getters & Setters
-    const std::vector<double> &get_outputs(){return outputs;}
-    const Morphology::Ptr &get_morphology(){return morphology;}
-    const Control::Ptr &get_control(){return control;}
-    const Genome::Ptr &get_morph_genome(){return morphGenome;}
-    const Genome::Ptr &get_ctrl_genome(){return ctrlGenome;}
-    void setObjectives(const std::vector<double> &objs){objectives = objs;}
-    const std::vector<double> &getObjectives(){return objectives;}
-    int get_individual_id(){return individual_id;}
-    void set_individual_id(int i){individual_id = i;}
-    void set_generation(int g){generation = g;}
-    int get_generation(){return generation;}
-    void set_parameters(const settings::ParametersMapPtr &param){parameters = param;}
-    const settings::ParametersMapPtr &get_parameters() const {return parameters;}
-    bool isEvaluated(){return isEval;}
-    void set_isEvaluated(bool b){isEval = b;}
-    void set_client_id(int cid){client_id = cid;}
-    int get_client_id(){return client_id;}
+    const std::vector<double> &get_outputs(){return _outputs;}
+    const Morphology::Ptr &get_morphology(){return _morphology;}
+    const Control::Ptr &get_control(){return _control;}
+    const Genome::Ptr &get_morph_genome(){return _morph_genome;}
+    const Genome::Ptr &get_ctrl_genome(){return _ctrl_enome;}
+    void setObjectives(const std::vector<double> &objs){_objectives = objs;}
+    const std::vector<double> &getObjectives(){return _objectives;}
+    int get_individual_id(){return _individual_id;}
+    void set_individual_id(int i){_individual_id = i;}
+    void set_generation(int g){_generation = g;}
+    int get_generation(){return _generation;}
+    void set_parameters(const settings::ParametersMapPtr &param){_parameters = param;}
+    const settings::ParametersMapPtr &get_parameters() const {return _parameters;}
+    bool isEvaluated(){return _is_eval;}
+    void set_isEvaluated(bool b){_is_eval = b;}
+    void set_client_id(int cid){_client_id = cid;}
+    int get_client_id(){return _client_id;}
 
-    const rollout_t &get_rollout() const {return rollout;}
-    void set_rollout(const rollout_t& ro){rollout = ro;}
+    const rollout_t &get_rollout() const {return _rollout;}
+    void set_rollout(const rollout_t& ro){_rollout = ro;}
 
     virtual std::string to_string() const;
     virtual void from_string(const std::string &str);
@@ -111,34 +110,34 @@ public:
     template<class archive>
     void serialize(archive &arch, const unsigned int v)
     {
-        arch & objectives;
-        arch & ctrlGenome;
-        arch & morphGenome;
-        arch & individual_id;
-        arch & generation;
+        arch & _objectives;
+        arch & _ctrl_enome;
+        arch & _morph_genome;
+        arch & _individual_id;
+        arch & _generation;
     }
-    const Learner::Ptr & get_learner(){return learner;}
+    const Learner::Ptr & get_learner(){return _learner;}
 
 protected:
-    std::vector<double> outputs;
-    std::vector<double> objectives;
-    Genome::Ptr morphGenome;
-    Genome::Ptr ctrlGenome;
-    Morphology::Ptr morphology;
-    Control::Ptr control;
-    Learner::Ptr learner;
+    std::vector<double> _outputs;
+    std::vector<double> _objectives;
+    Genome::Ptr _morph_genome;
+    Genome::Ptr _ctrl_enome;
+    Morphology::Ptr _morphology;
+    Control::Ptr _control;
+    Learner::Ptr _learner;
 
-    settings::ParametersMapPtr parameters;
-    misc::RandNum::Ptr randNum;
+    settings::ParametersMapPtr _parameters;
+    misc::RandNum::Ptr _rand_num;
 
-    bool isEval;
+    bool _is_eval;
 
-    int individual_id;
-    int generation;
+    int _individual_id;
+    int _generation;
 
-    int client_id;
-    double sum_ctrl_freq = 0;
-    rollout_t rollout;
+    int _client_id;
+    double _sum_ctrl_freq = 0;
+    rollout_t _rollout;
 
     //    std::function<Genome::Factory> createGenome;
 

@@ -23,7 +23,7 @@ public:
      * @param upper bound (double)
      * @return a double
      */
-    double rand_double(double lower, double upper); // creates a random float between two specified values.
+    double rand_double(double lower, double upper);
 
     /**
      * @brief random number between a lower bound and a upper bound included
@@ -31,7 +31,7 @@ public:
      * @param upper bound (float)
      * @return a float
      */
-    float rand_float(float lower, float upper); // creates a random float between two specified values.
+    float rand_float(float lower, float upper);
 
     /**
      * @brief random number between a lower bound and a upper bound included
@@ -39,7 +39,7 @@ public:
      * @param upper bound (int)
      * @return an integer
      */
-    int rand_int(int lower, int upper); // creates a random integer (range, offset)
+    int rand_int(int lower, int upper);
 
     /**
      * @brief Generate a random vector of double
