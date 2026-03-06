@@ -5,8 +5,8 @@
 #include "apear/settings.hpp"
 #include "apear/misc/rand_num.hpp"
 
-#include <boost/serialization/map.hpp>
-#include <boost/serialization/shared_ptr.hpp>
+// #include <boost/serialization/map.hpp>
+// #include <boost/serialization/shared_ptr.hpp>
 
 namespace apear {
 class  Genome
@@ -62,14 +62,14 @@ public:
     const std::vector<int>& get_parents_ids() const {return _parents_ids;}
     void set_parents_ids(const std::vector<int>& ids){_parents_ids = ids;}
 
-    template <class archive>
-    void serialize(archive &arch, const unsigned int v)
-    {
-        arch & _id;
-        arch & _type;
-        arch & _parents_ids;
-        //        arch & initialized;
-    }
+    // template <class archive>
+    // void serialize(archive &arch, const unsigned int v)
+    // {
+    //     arch & _id;
+    //     arch & _type;
+    //     arch & _parents_ids;
+    //     //        arch & initialized;
+    // }
 
 protected:
     /// simulation setting shared by genome and EA
@@ -98,11 +98,11 @@ public:
     std::string to_string() const override{return "";}
     void from_string(const std::string &) override{}
 
-    template <class archive>
-    void serialize(archive &arch, const unsigned int v)
-    {
-        arch & boost::serialization::base_object<Genome>(*this);
-    }
+    // template <class archive>
+    // void serialize(archive &arch, const unsigned int v)
+    // {
+    //     arch & boost::serialization::base_object<Genome>(*this);
+    // }
 };
 
 

@@ -74,18 +74,18 @@ public:
     std::string to_string() const override;
     void from_string(const std::string & gen_str) override;
 
-    friend class boost::serialization::access;
-    template <class archive>
-    void serialize(archive &arch, const unsigned int v)
-    {
-        arch & boost::serialization::base_object<Genome>(*this);
-        arch & weights;
-        arch & biases;
-        arch & nbr_input;
-        arch & nbr_output;
-        arch & nbr_hidden;
-        arch & nn_type;
-    }
+    // friend class boost::serialization::access;
+    // template <class archive>
+    // void serialize(archive &arch, const unsigned int v)
+    // {
+    //     arch & boost::serialization::base_object<Genome>(*this);
+    //     arch & weights;
+    //     arch & biases;
+    //     arch & nbr_input;
+    //     arch & nbr_output;
+    //     arch & nbr_hidden;
+    //     arch & nn_type;
+    // }
 
 private:
     std::vector<double> weights;
@@ -96,19 +96,19 @@ private:
     int nn_type=0;
 };
 
-class NNParamGenomeLog : public Logging
-{
-public:
-    NNParamGenomeLog() : Logging(true){} //Logging at the end of the generation
-    NNParamGenomeLog(double ot) :
-        Logging(true),
-        objective_threshold(ot)
-    {} //Logging at the end of the generation
-    void saveLog(EA::Ptr & ea);
-    void loadLog(const std::string& log_file){}
-private:
-    double objective_threshold = 0;
-};
+// class NNParamGenomeLog : public Logging
+// {
+// public:
+//     NNParamGenomeLog() : Logging(true){} //Logging at the end of the generation
+//     NNParamGenomeLog(double ot) :
+//         Logging(true),
+//         objective_threshold(ot)
+//     {} //Logging at the end of the generation
+//     void saveLog(EA::Ptr & ea);
+//     void loadLog(const std::string& log_file){}
+// private:
+//     double objective_threshold = 0;
+// };
 
 }//apear
 

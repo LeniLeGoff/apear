@@ -131,21 +131,21 @@ void NNParamGenome::from_string(const std::string &gen_str){
 
 
 
-void NNParamGenomeLog::saveLog(EA::Ptr &ea)
-{
-    int generation = ea->get_generation();
+// void NNParamGenomeLog::saveLog(EA::Ptr &ea)
+// {
+//     int generation = ea->get_generation();
 
-    std::ofstream logFileStream;
-    for(size_t i = 0; i < ea->get_population().size(); i++){
-        std::stringstream filename;
-        filename << "ctrlGenome_" << generation << "_" << i;
-        if(!openOLogFile(logFileStream, filename.str()))
-            return;
-        auto &ind = ea->get_population()[i];
-        if(ind->getObjectives()[0] >= objective_threshold)
-            logFileStream << std::dynamic_pointer_cast<NNParamGenome>(
-                                 ind->get_ctrl_genome())->to_string();
+//     std::ofstream logFileStream;
+//     for(size_t i = 0; i < ea->get_population().size(); i++){
+//         std::stringstream filename;
+//         filename << "ctrlGenome_" << generation << "_" << i;
+//         if(!openOLogFile(logFileStream, filename.str()))
+//             return;
+//         auto &ind = ea->get_population()[i];
+//         if(ind->getObjectives()[0] >= objective_threshold)
+//             logFileStream << std::dynamic_pointer_cast<NNParamGenome>(
+//                                  ind->get_ctrl_genome())->to_string();
 
-        logFileStream.close();
-    }
-}
+//         logFileStream.close();
+//     }
+// }

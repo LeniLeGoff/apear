@@ -30,7 +30,7 @@ public:
 
 private:
     std::vector<Individual::Ptr> _individuals;
-    std::vector<int> _indexes;
+    std::vector<size_t> _indexes;
 };
 
 }

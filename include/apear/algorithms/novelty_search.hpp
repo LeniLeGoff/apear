@@ -90,32 +90,32 @@ struct Novelty {
 
 };
 
-template <class ea_t>
-class ArchiveLog : public Logging
-{
-public:
-    ArchiveLog(const std::string &file) : Logging(file,true){} //Logging at the end of the generation
-    void saveLog(EA::Ptr & ea){
-        int generation = ea->get_generation();
+// template <class ea_t>
+// class ArchiveLog : public Logging
+// {
+// public:
+//     ArchiveLog(const std::string &file) : Logging(file,true){} //Logging at the end of the generation
+//     void saveLog(EA::Ptr & ea){
+//         int generation = ea->get_generation();
 
-        std::ofstream savePopFile;
-        if(!openOLogFile(savePopFile))
-            return;
+//         std::ofstream savePopFile;
+//         if(!openOLogFile(savePopFile))
+//             return;
 
-        Eigen::VectorXd desc;
+//         Eigen::VectorXd desc;
 
-        savePopFile << generation << ";" << static_cast<ea_t*>(ea.get())->get_archive().size() << ";";
-        for (size_t i = 0; i < static_cast<ea_t*>(ea.get())->get_archive().size(); i++) {
-            desc = static_cast<ea_t*>(ea.get())->get_archive()[i];
-            for(size_t j = 0; j < desc.rows() - 1 ; j++)
-                savePopFile << desc(j) << ",";
-            savePopFile << desc(desc.rows()-1) << ";";
-        }
-        savePopFile << std::endl;
-        savePopFile.close();
-    }
-    void loadLog(const std::string& logFile){}
-};
+//         savePopFile << generation << ";" << static_cast<ea_t*>(ea.get())->get_archive().size() << ";";
+//         for (size_t i = 0; i < static_cast<ea_t*>(ea.get())->get_archive().size(); i++) {
+//             desc = static_cast<ea_t*>(ea.get())->get_archive()[i];
+//             for(size_t j = 0; j < desc.rows() - 1 ; j++)
+//                 savePopFile << desc(j) << ",";
+//             savePopFile << desc(desc.rows()-1) << ";";
+//         }
+//         savePopFile << std::endl;
+//         savePopFile.close();
+//     }
+//     void loadLog(const std::string& logFile){}
+// };
 
 
 }//apear

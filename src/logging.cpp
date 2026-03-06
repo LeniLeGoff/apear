@@ -1,11 +1,12 @@
 #include "apear/logging.hpp"
-#include <boost/filesystem.hpp>
+#include <filesystem>
+
 
 using namespace apear;
 
-std::string Logging::log_folder = "";
+std::string logging::log_folder = "";
 
-void Logging::create_log_folder(const std::string &exp_name){
+void logging::create_log_folder(const std::string &exp_name){
     std::random_device rd;
 
     typedef std::chrono::duration<double,std::milli> milli_sec;
@@ -29,91 +30,26 @@ void Logging::create_log_folder(const std::string &exp_name){
     set_log_folder(exp_name + "_" + stream.str());
     create_folder(exp_name + "_" + stream.str());
 }
-void Logging::set_log_folder(const std::string& name){
+void logging::set_log_folder(const std::string& name){
     log_folder = name;
 }
-void Logging::create_folder(const std::string &name){
-    if(!boost::filesystem::exists(name))
-        boost::filesystem::create_directory(name);
+void logging::create_folder(const std::string &name){
+    if(!std::filesystem::exists(name))
+        std::filesystem::create_directory(name);
 }
 
-void Logging::saveStringToFile(const std::string &fileName, const std::string &data){
+void logging::save_string_to_file(const std::string &fileName, const std::string &data){
     std::ofstream out(log_folder + "/" + fileName,std::ios::out | std::ios::ate | std::ios::app);
     if(!out)
     {
-        std::cerr << "unable to open : " << Logging::log_folder + std::string("/")  + fileName << std::endl;
+        std::cerr << "unable to open : " << logging::log_folder + std::string("/")  + fileName << std::endl;
         return;
     }
     out << data;
     out.close();
 }
 
-bool Logging::openOLogFile(std::ofstream &logFileStream){
-    logFileStream.open(Logging::log_folder + std::string("/")  + logFile, std::ios::out | std::ios::ate | std::ios::app);
 
-    if(!logFileStream)
-    {
-        std::cerr << "unable to open : " << Logging::log_folder + std::string("/")  + logFile << std::endl;
-        return false;
-    }
-
-    return true;
-}
-
-
-bool Logging::openILogFile(std::ifstream &logFileStream){
-    logFileStream.open(Logging::log_folder + std::string("/")  + logFile);
-
-    if(!logFileStream)
-    {
-        std::cerr << "unable to open : " << Logging::log_folder + std::string("/")  + logFile << std::endl;
-        return false;
-    }
-
-    return true;
-}
-
-bool Logging::openOLogFile(std::ofstream &logFileStream, const std::string &log_file){
-    logFileStream.open(Logging::log_folder + std::string("/")  + log_file, std::ios::out | std::ios::ate | std::ios::app);
-
-    if(!logFileStream)
-    {
-        std::cerr << "unable to open : " << Logging::log_folder + std::string("/")  + log_file << std::endl;
-        return false;
-    }
-
-    return true;
-}
-
-bool Logging::openILogFile(std::ifstream &logFileStream, const std::string &log_file){
-    logFileStream.open(Logging::log_folder + std::string("/")  + log_file);
-
-    if(!logFileStream)
-    {
-        std::cerr << "unable to open : " << Logging::log_folder + std::string("/")  + log_file << std::endl;
-        return false;
-    }
-
-    return true;
-}
-
-void FitnessLog::saveLog(EA::Ptr &ea)
-{
-    int generation = ea->get_generation();
-
-    std::ofstream savePopFile;
-    if(!openOLogFile(savePopFile))
-        return;
-
-    savePopFile << generation << "," << ea->get_population().size() << "," << ea->get_population()[0]->getObjectives().size() << ",";
-    for (size_t i = 0; i < ea->get_population().size(); i++) {
-        for (const double& obj : ea->get_population()[i]->getObjectives()) {
-            savePopFile << obj << ",";
-        }
-    }
-    savePopFile << std::endl;
-    savePopFile.close();
-}
 
 
 

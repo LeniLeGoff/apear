@@ -306,12 +306,12 @@ template<typename T>
 T getParameter(const ParametersMapPtr &params,const std::string& name)
 {
     if(params == nullptr){
-        std::cerr << "are::settings::getParamter error: params is empty - queried parameter: " << name << std::endl;
+        std::cerr << "are::settings::getParameter error: params is empty - queried parameter: " << name << std::endl;
         exit(1);
         return T();
     }
     if(params->find(name) == params->end()){
-        std::cerr << "are::settings::getParamter error: Unable to find parameters " << name << " of type " << T().name << std::endl
+        std::cerr << "are::settings::getParameter error: Unable to find parameters " << name << " of type " << T().name << std::endl
                   << "You should define it in the parameters file." << std::endl;
         if(settings::defaults::parameters->find(name) == settings::defaults::parameters->end()){
             std::cerr << "No default value found" << std::endl;
@@ -323,7 +323,7 @@ T getParameter(const ParametersMapPtr &params,const std::string& name)
     }
 
     if(cast<T>(params->at(name)).get() == nullptr){
-        std::cerr << "are::settings::getParamter error: wrong type for parameter " << name << std::endl;
+        std::cerr << "are::settings::getParameter error: wrong type for parameter " << name << std::endl;
         exit(1);
         return T();
     }
@@ -347,7 +347,7 @@ T getParameter(const ParametersMap &params,const std::string& name)
     }
 
     if(cast<T>(params.at(name)).get() == nullptr){
-        std::cerr << "are::settings::getParamter error: wrong type for parameter " << name << std::endl;
+        std::cerr << "are::settings::getParameter error: wrong type for parameter " << name << std::endl;
         exit(1);
         return T();
     }

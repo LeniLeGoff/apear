@@ -55,10 +55,10 @@ Novelty::distance_fct_t Novelty::distance_fcts::positional = [](Eigen::VectorXd 
     std::vector<std::vector<std::array<int,3>>> distances;
     auto& L = std::max(V,W,[](const auto& a,const auto& b) -> bool{return a.second.size() < b.second.size();}); //longest
     auto& S = std::min(W,V,[](const auto& a,const auto& b) -> bool{return a.second.size() < b.second.size();}); //shortest
-    for(int i = 0; i < L.second.size(); i++){
+    for(size_t i = 0; i < L.second.size(); i++){
         std::vector<std::array<int,3>> dists;
-        for(int j = 0; j < S.second.size(); j++){
-            dists.push_back({L1(L.second[i],S.second[j]),i,j}); //{distance,index_0,index_1}
+        for(size_t j = 0; j < S.second.size(); j++){
+            dists.push_back({L1(L.second[i],S.second[j]),static_cast<int>(i),static_cast<int>(j)}); //{distance,index_0,index_1}
         }
         //sort in ascendent order
         std::sort(dists.begin(),dists.end(),

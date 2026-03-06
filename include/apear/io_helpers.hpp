@@ -1,13 +1,13 @@
 #pragma once
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 //#include <filesystem> //if c++17
 #include "apear/settings.hpp"
 #include "apear/misc/utilities.hpp"
 #include "apear/individual.hpp"
 
 //namesapce fs = std::filesystem //if c++17
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace apear {
 namespace ioh{

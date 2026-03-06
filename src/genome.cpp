@@ -4,7 +4,7 @@
 using namespace apear;
 
 Genome::Genome(const misc::RandNum::Ptr &rn, const settings::ParametersMapPtr &param, int id)
-    : _rand_num(rn), _parameters(param), _id(id)
+    : _parameters(param),_rand_num(rn), _id(id)
 {
     _parents_ids= std::vector<int>(2,-1);
 }

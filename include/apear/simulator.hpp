@@ -1,38 +1,46 @@
 #pragma once
 
 #include <memory>
-#include <vector>
-#include <stdexcept>
+#include "apear/environment.hpp"
 
 namespace apear {
 
 
 enum sim_state_t{
     IDLE = 0,
-    STARTED,
-    STOPPED,
+    INITIALIZED,
+    FINISHED,
     RUNNING,
     ERROR
 };
 
+template<typename ind_t>
 class Simulator{
 public:
+    using IndPtr = std::shared_ptr<ind_t>;
     typedef std::unique_ptr<Simulator> Ptr;
     typedef std::unique_ptr<const Simulator> ConstPtr;
 
     Simulator(){}
+    Simulator(settings::ParametersMapPtr param) : _parameters(param){}
     Simulator(const Simulator& sim) :
         _individual_ready(sim._individual_ready),
-        _env_initialized(sim._env_initialized)
+        _env_initialized(sim._env_initialized),
+        _parameters(sim._parameters),
+        _state(sim._state)
     {}
-
+    /**
+     * @brief init_environment
+     * @param env
+     * @return
+     */
+    virtual bool init_environment(const Environment::Ptr &env) = 0;
 
     /**
-     * @brief start the simulation in stepping mode
-     * @param wether to activate stepping mode or not
+     * @brief init simulator with the individual
      * @return true if the simulation started successfully, false otherwise
      */
-    virtual bool start(bool stepping = false) = 0;
+    virtual bool init(const IndPtr &ind) = 0;
 
     /**
      * @brief step the simulation
@@ -46,25 +54,16 @@ public:
      */
     virtual bool stop() = 0;
 
-    /**
-     * @brief run the simulation for a set duration in seconds
-     * @param duration of the simulation in seconds
-     * @return true if the simulation stopped normally, false otherwise
-     */
-    virtual bool run(double duration) = 0;
+    virtual void update_ind(IndPtr &ind, const Environment::Ptr& env) = 0;
 
-    /**
-     * @brief run the simulation in stepping mode for a set duration in seconds
-     * @param duration of the simulation in seconds
-     * @return true if the simulation stopped normally, false otherwise
-     */
-    virtual bool run_stepping(double duration) = 0;
 
     /**
      * @brief querry the current state of the simulator
      * @return the current state of the simulator
      */
-    virtual sim_state_t state() = 0;
+    virtual sim_state_t state(){
+        return _state;
+    }
 
     /**
      * @brief querry the current simulation time
@@ -82,13 +81,11 @@ public:
     bool is_env_initialized(){return _env_initialized;}
 
 
-    static std::string state_to_string(int state);
-
-private:
+protected:
     bool _individual_ready = false;
     bool _env_initialized = false;
-
-    void _print_error(const std::string &fct_name,const std::runtime_error& error,  const std::vector<std::string> fct_args = {});
+    settings::ParametersMapPtr _parameters;
+    sim_state_t _state = sim_state_t::IDLE;
 
 };//Simulator
 

@@ -1,8 +1,9 @@
 #include "apear/io_helpers.hpp"
+#include <fstream>
 
 using namespace apear;
 namespace st = settings;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 bool ioh::move_file(const std::string &origin, const std::string &dest){
     try{
@@ -134,53 +135,7 @@ void ioh::load_nbr_organs(const std::string &folder, const int& id, int &wheels,
 
 }
 
-int ioh::choice_of_robot_to_evaluate(const std::vector<int> &ids)
-{
 
-    std::cout << "Robots available for evaluation: " << std::endl;
-    std::function<void(void)> print_ids = [&](){
-        for(const int &id: ids){
-            std::cout << id << std::endl;
-        }
-    };
-    print_ids();
-
-    bool good = false;
-    int chosen_id;
-    while(!good){
-        good = true;
-        std::cout << "Please enter the id of the robot ready to be evaluated. (default : " << ids.front() << ")" << std::endl;
-        std::string entry;
-        std::getline(std::cin,entry);
-        if(entry.empty()){
-            good == true;
-            chosen_id = ids.front();
-            break;
-        }
-        //check if the entry is a number. More precisely if the entry is a string convertible into an integer.
-        try{
-            chosen_id = std::stoi(entry);
-        }catch(...){
-            std::cerr << "You entry is not a number" << std::endl;
-            good = false;
-            print_ids();
-            continue;
-        }
-        //If the entry is a number, check if it corresponds to an id in the list of ids.
-        good = [&]() -> bool{
-                for(const int& id: ids)
-                    if(id == chosen_id)
-                        return true;
-                return false;}();
-        if(!good){
-            std::cerr << "The robot corresponding to the chosen id is not available for evaluation" << std::endl;
-            print_ids();
-        }
-
-    }
-
-    return chosen_id;
-}
 
 void ioh::write_morph_genomes(const std::string &folder, const std::vector<Individual::Ptr> &population){
     int id = 0;

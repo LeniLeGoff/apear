@@ -49,12 +49,12 @@ struct waypoint{
                std::isnan(orientation[0]) || std::isnan(orientation[1]) || std::isnan(orientation[2]);
     }
 
-    template<class archive>
-    void serialize(archive &arch, const unsigned int v)
-    {
-        arch & position;
-        arch & orientation;
-    }
+    // template<class archive>
+    // void serialize(archive &arch, const unsigned int v)
+    // {
+    //     arch & position;
+    //     arch & orientation;
+    // }
 
 };
 
@@ -67,15 +67,15 @@ public:
 
 
     Environment(){
-        trajectory.resize(0);
-        final_position.resize(3);
+        _trajectory.resize(0);
+        _final_position.resize(3);
     }
     Environment(const Environment& env) :
-        name(env.name),
-        parameters(env.parameters),
-        randNum(env.randNum),
-        trajectory(env.trajectory),
-        final_position(env.final_position){}
+        _name(env._name),
+        _parameters(env._parameters),
+        _rand_num(env._rand_num),
+        _trajectory(env._trajectory),
+        _final_position(env._final_position){}
 
     ~Environment(){}
 
@@ -88,38 +88,38 @@ public:
      * @brief Calculate the fitness value of the robot
      * @param morph The pointer of the robot (morphology)
      */
-    virtual std::vector<double> fitnessFunction(const Individual::Ptr &ind) = 0;
+    virtual std::vector<double> fitness_function(const Individual::Ptr &ind) = 0;
 
     virtual void update_info(double time) = 0;
 
     virtual void print_info(){}
 
     virtual void clear_data(){
-        trajectory.clear();
+        _trajectory.clear();
     }
 
     //GETTERS & SETTERS
-    void set_parameters(const settings::ParametersMapPtr &param){parameters = param;}
-    const settings::ParametersMapPtr &get_parameters(){return parameters;}
-    const std::string &get_name(){return name;}
-    void set_randNum(misc::RandNum::Ptr &rn){randNum = rn;}
-    const std::vector<waypoint> &get_trajectory(){return trajectory;}
-    const std::vector<double> &get_final_position(){return final_position;}
+    void set_parameters(const settings::ParametersMapPtr &param){_parameters = param;}
+    const settings::ParametersMapPtr &get_parameters(){return _parameters;}
+    const std::string &get_name(){return _name;}
+    void set_randNum(misc::RandNum::Ptr &rn){_rand_num = rn;}
+    const std::vector<waypoint> &get_trajectory(){return _trajectory;}
+    const std::vector<double> &get_final_position(){return _final_position;}
 
 protected:
-    std::string name;
+    std::string _name;
     ///setting of the environment
-    settings::ParametersMapPtr parameters;
-    misc::RandNum::Ptr randNum;
-    std::vector<waypoint> trajectory;
-    std::vector<double> final_position;
+    settings::ParametersMapPtr _parameters;
+    misc::RandNum::Ptr _rand_num;
+    std::vector<waypoint> _trajectory;
+    std::vector<double> _final_position;
 };
 
 class DummyEnv : public Environment
 {
 public:
     void init() override {}
-    std::vector<double> fitnessFunction(const Individual::Ptr &ind) {return {0};}
+    std::vector<double> fitness_function(const Individual::Ptr &ind) override {return {0};}
     void update_info(double time) override {}
 };
 

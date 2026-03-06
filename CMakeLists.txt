@@ -4,9 +4,12 @@ project(apear)
 include(GNUInstallDirs)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 
 file(GLOB_RECURSE SOURCES "${PROJECT_SOURCE_DIR}/src/*.cpp")
-message(${SOURCES})
+# message(${SOURCES})
+add_compile_options(-DEIGEN_DONT_PARALLELIZE)
 
 add_library(apear SHARED ${SOURCES})
 target_include_directories(apear PUBLIC
@@ -14,7 +17,8 @@ target_include_directories(apear PUBLIC
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     "/usr/include/eigen3"
 )
-# target_link_libraries(apear Boost::serialization Boost::filesystem)
+target_link_libraries(apear tbb) #Boost::serialization Boost::filesystem)
+target_compile_options(apear PRIVATE -Wall -Werror)
 
 
 
