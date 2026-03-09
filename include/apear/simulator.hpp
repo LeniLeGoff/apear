@@ -22,12 +22,13 @@ public:
     typedef std::unique_ptr<const Simulator> ConstPtr;
 
     Simulator(){}
-    Simulator(settings::ParametersMapPtr param) : _parameters(param){}
+    Simulator(settings::ParametersMapPtr param, bool headless = true) : _parameters(param), _headless(headless){}
     Simulator(const Simulator& sim) :
         _individual_ready(sim._individual_ready),
         _env_initialized(sim._env_initialized),
         _parameters(sim._parameters),
-        _state(sim._state)
+        _state(sim._state),
+        _headless(sim._headless)
     {}
     /**
      * @brief init_environment
@@ -86,6 +87,7 @@ protected:
     bool _env_initialized = false;
     settings::ParametersMapPtr _parameters;
     sim_state_t _state = sim_state_t::IDLE;
+    bool _headless = true;
 
 };//Simulator
 

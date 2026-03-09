@@ -35,9 +35,10 @@ public:
     AsyncDealer() = delete;
     AsyncDealer(const settings::ParametersMapPtr &param, const misc::RandNum::Ptr &rn) : _parameters(param), _rand_num(rn){}
 
-    bool init(int nbr_sim = 1){
+    bool init(int nbr_sim = 1, bool headless = true){
         for(int i = 0; i < nbr_sim; i++){
-            _simulators.push_back(sim_t(_parameters));
+            _simulators.push_back(sim_t(_parameters, headless));
+
         }
         _ind_vec.resize(nbr_sim);
         return true;

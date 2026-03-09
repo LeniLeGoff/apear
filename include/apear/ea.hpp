@@ -104,7 +104,7 @@ public:
         //update the best individual
         double best_obj;
         if(_best_ind == nullptr)
-            best_obj = 0;
+            best_obj = -1;
         else best_obj = _best_ind->get_objectives()[0];
         for(IndPtr ind: this->_evaluated){
             if(ind->get_objectives()[0] > best_obj){

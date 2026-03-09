@@ -48,6 +48,8 @@ public:
     Individual(const Individual& ind) :
         _outputs(ind._outputs),
         _objectives(ind._objectives),
+        _morph_genome(ind._morph_genome),
+        _ctrl_genome(ind._ctrl_genome),
         _morphology(ind._morphology),
         _control(ind._control),
         _learner(ind._learner),
@@ -83,8 +85,10 @@ public:
     virtual void update(double delta_time);
     virtual void mutate()
     {
-        _morph_genome->mutate();
-        _ctrl_genome->mutate();
+        if(_morph_genome != nullptr)
+            _morph_genome->mutate();
+        if(_ctrl_genome != nullptr)
+            _ctrl_genome->mutate();
     }
     virtual void crossover(const Individual::Ptr& partner, Individual *child);
     virtual void symmetrical_crossover(const Individual::Ptr& partner, Individual *child1, Individual *child2);
