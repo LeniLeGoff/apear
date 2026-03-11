@@ -38,7 +38,6 @@ public:
     bool init(int nbr_sim = 1, bool headless = true){
         for(int i = 0; i < nbr_sim; i++){
             _simulators.push_back(sim_t(_parameters, headless));
-
         }
         _ind_vec.resize(nbr_sim);
         return true;
@@ -50,31 +49,39 @@ public:
             individuals_distribution();
 
         //Update simulators
-        // tbb::parallel_for(tbb::blocked_range<size_t>(0,_simulators.size()),
-        //                   [&](tbb::blocked_range<size_t> r){
-        //                       for(size_t sim_idx = r.begin(); sim_idx != r.end(); ++sim_idx)
-        //                       {
-        for(size_t sim_idx = 0; sim_idx < _simulators.size(); sim_idx++){
-            if(_ind_vec[sim_idx] == nullptr)
-                continue;
-            sim_t &sim = _simulators[sim_idx];
-            if(sim.state() == sim_state_t::IDLE){
-                sim.init_environment(_environment);
-                sim.init(_ind_vec[sim_idx]);
-            }else if(sim.state() == sim_state_t::INITIALIZED){
-                if(sim.step()){
-                    if(verbose)
-                        std::cout << "simulation " << sim_idx <<  " running" << std::endl;
-                }else{
-                    std::cerr << "simulation " << sim_idx << " encountered an error while running" << std::endl;
-                }
-            }else if(sim.state() == sim_state_t::FINISHED){
-                sim.update_ind(_ind_vec[sim_idx],_environment);
-                _ea->evaluated().push_back(_ind_vec[sim_idx]);
-                _ind_vec[sim_idx].reset();
-            }
-        }//for each simulators
-                          // });//tbb::parallel
+        tbb::parallel_for(tbb::blocked_range<size_t>(0,_simulators.size()),
+                          [&](tbb::blocked_range<size_t> r){
+                              for(size_t sim_idx = r.begin(); sim_idx != r.end(); ++sim_idx)
+                              {
+       // for(size_t sim_idx = 0; sim_idx < _simulators.size(); sim_idx++){
+                                  if(_ind_vec[sim_idx] == nullptr)
+                                      continue;
+                                  sim_t &sim = _simulators[sim_idx];
+                                  if(sim.state() == sim_state_t::IDLE){
+                                      if(verbose)
+                                          std::cout << "simulation " << sim_idx <<  " initializing" << std::endl;
+                                      sim.init_environment(_environment);
+                                      sim.init(_ind_vec[sim_idx]);
+                                  }else if(sim.state() == sim_state_t::INITIALIZED){
+                                      sim.update_robot(_ind_vec[sim_idx]);
+                                      if(sim.step()){
+                                          // if(verbose)
+                                              // std::cout << "simulation " << sim_idx <<  " running" << std::endl;
+                                      }else{
+                                          std::cerr << "simulation " << sim_idx << " encountered an error while running" << std::endl;
+                                      }
+                                  }else if(sim.state() == sim_state_t::FINISHED){
+                                      if(verbose)
+                                          std::cout << "simulation " << sim_idx <<  " finished" << std::endl;
+                                      sim.update_ind(_ind_vec[sim_idx],_environment);
+                                      if(verbose)
+                                          std::cout << "ind " << _ind_vec[sim_idx]->get_morph_genome()->id()
+                                                    << " as fitness " << _ind_vec[sim_idx]->get_objectives()[0] << std::endl;
+                                      _ea->evaluated().push_back(_ind_vec[sim_idx]);
+                                      _ind_vec[sim_idx].reset();
+                                  }
+                              }//for each simulators
+        });//tbb::parallel
         _ea->update();
         save_logs();
         if(_ea->is_finish()){

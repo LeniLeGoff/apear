@@ -14,9 +14,12 @@ public:
 
     typedef std::shared_ptr<Control> Ptr;
     typedef std::shared_ptr<const Control> ConstPtr;
-    typedef Control::Ptr (Factory)(int,misc::RandNum::Ptr);
 
     Control(){}
+    Control(const misc::RandNum::Ptr& rand_num, const settings::ParametersMapPtr &param) :
+        _rand_num(rand_num),
+        _parameters(param)
+    {}
     Control(const Control& ctrl) :
         _rand_num(ctrl._rand_num),
         _parameters(ctrl._parameters)

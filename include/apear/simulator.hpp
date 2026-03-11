@@ -49,6 +49,8 @@ public:
      */
     virtual bool step() = 0;
 
+    virtual void update_robot(const IndPtr &ind){}
+
     /**
      * @brief stop the simulation
      * @return true if the simulation has stopped, false otherwise
