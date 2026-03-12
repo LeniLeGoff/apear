@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include "apear/environment.hpp"
+#include "apear/settings.hpp"
 
 namespace apear {
 
@@ -24,18 +24,10 @@ public:
     Simulator(){}
     Simulator(settings::ParametersMapPtr param, bool headless = true) : _parameters(param), _headless(headless){}
     Simulator(const Simulator& sim) :
-        _individual_ready(sim._individual_ready),
-        _env_initialized(sim._env_initialized),
         _parameters(sim._parameters),
         _state(sim._state),
         _headless(sim._headless)
     {}
-    /**
-     * @brief init_environment
-     * @param env
-     * @return
-     */
-    virtual bool init_environment(const Environment::Ptr &env) = 0;
 
     /**
      * @brief init simulator with the individual
@@ -57,8 +49,6 @@ public:
      */
     virtual bool stop() = 0;
 
-    virtual void update_ind(IndPtr &ind, const Environment::Ptr& env) = 0;
-
 
     /**
      * @brief querry the current state of the simulator
@@ -67,6 +57,8 @@ public:
     virtual sim_state_t state(){
         return _state;
     }
+
+    void set_state(sim_state_t state){_state = state;}
 
     /**
      * @brief querry the current simulation time
@@ -77,16 +69,8 @@ public:
     virtual void reconnect() = 0;
 
 
-    bool is_individual_ready(){return _individual_ready;}
-    void ready_for_new_sim(){_individual_ready = false;}
-    void sim_started(){_individual_ready = true;}
-    void env_initialized(){_env_initialized = true;}
-    bool is_env_initialized(){return _env_initialized;}
-
 
 protected:
-    bool _individual_ready = false;
-    bool _env_initialized = false;
     settings::ParametersMapPtr _parameters;
     sim_state_t _state = sim_state_t::IDLE;
     bool _headless = true;

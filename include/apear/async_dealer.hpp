@@ -29,6 +29,7 @@ class AsyncDealer
 public:
     using EAPtr = std::unique_ptr<EA<ind_t>>;
     using IndPtr = std::shared_ptr<ind_t>;
+    using EnvPtr = std::shared_ptr<Environment<sim_t>>;
     typedef std::unique_ptr<AsyncDealer> Ptr;
     typedef std::unique_ptr<const AsyncDealer> ConstPtr;
 
@@ -60,10 +61,12 @@ public:
                                   if(sim.state() == sim_state_t::IDLE){
                                       if(verbose)
                                           std::cout << "simulation " << sim_idx <<  " initializing" << std::endl;
-                                      sim.init_environment(_environment);
+
+                                      _environment->init(sim);
                                       sim.init(_ind_vec[sim_idx]);
                                   }else if(sim.state() == sim_state_t::INITIALIZED){
                                       sim.update_robot(_ind_vec[sim_idx]);
+                                      _environment->update(sim.time(),sim);
                                       if(sim.step()){
                                           // if(verbose)
                                               // std::cout << "simulation " << sim_idx <<  " running" << std::endl;
@@ -73,7 +76,8 @@ public:
                                   }else if(sim.state() == sim_state_t::FINISHED){
                                       if(verbose)
                                           std::cout << "simulation " << sim_idx <<  " finished" << std::endl;
-                                      sim.update_ind(_ind_vec[sim_idx],_environment);
+                                      _ind_vec[sim_idx]->set_objectives(_environment->fitness_function(sim));
+                                      sim.set_state(sim_state_t::IDLE);
                                       if(verbose)
                                           std::cout << "ind " << _ind_vec[sim_idx]->get_morph_genome()->id()
                                                     << " as fitness " << _ind_vec[sim_idx]->get_objectives()[0] << std::endl;
@@ -118,7 +122,7 @@ public:
     const misc::RandNum::Ptr &get_rand_num(){return _rand_num;}
     void set_rand_num(const misc::RandNum::Ptr &rn){_rand_num = rn;}
 
-    void set_environment(const Environment::Ptr &env){_environment = env;}
+    void set_environment(const EnvPtr &env){_environment = env;}
 
     void set_ea(EAPtr &ea){ea.swap(_ea);}
 
@@ -138,7 +142,7 @@ private:
     /// pointer to random number generator of EA
     misc::RandNum::Ptr _rand_num;
     /// Pointer to the Environment class
-    Environment::Ptr _environment;
+    EnvPtr _environment;
 
     std::vector<typename Logging<ind_t>::Ptr> _logging_fcts;
     int _population_size;

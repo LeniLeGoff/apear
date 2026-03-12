@@ -65,6 +65,7 @@ protected:
     settings::ParametersMapPtr _parameters;
     ///random number generator for EA
     misc::RandNum::Ptr _rand_num;
+    int _highest_id = 0; //highest id of individual generated so far.
 };
 
 

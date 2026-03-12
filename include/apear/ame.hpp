@@ -21,20 +21,33 @@ class AsyncMorphoEvolution : public apear::EA<ind_t>
     {}
 
     void init() override{
-        //TODO
+        int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
+        this->_eval_queue.resize(pop_size);
+        for(const IndPtr& ind: this->_eval_queue){
+            ind = std::make_shared<ind_t>(this->_rand_num,this->_parameters);
+            ind->init();
+        }
     }
 
     bool update() override{
-        //TODO
-        return false;
+        for(const IndPtr& ind: this->_evaluated){
+            _nbr_eval++;
+            _parent_pool.push_back(ind);
+            _remove_worst_parent();
+        }
+        this->evaluated().clear();
+        _reproduction();
+        return true;
     }
     bool is_finish() override{
-        //TODO
+        if(_nbr_eval >= settings::getParameter<settings::Integer>(this->_parameters,"#maxNbrEval").value)
+            return true;
         return false;
     }
 
 private:
     std::vector<IndPtr> _parent_pool;
+    int _nbr_eval = 0;
 
     void _reproduction(){
         int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
@@ -58,29 +71,63 @@ private:
             //-
 
             //create a new morpholigical genome
-            std::vector<genome_t> gene_subset;
+            std::vector<IndPtr> gene_subset;
             for(const int &idx: random_indexes)
-                gene_subset.push_back(parent_pool[idx]);
-            Genome::Ptr new_morph_gene = best_of_subset(gene_subset);
-            new_morph_gene->set_id(highest_morph_id++);
-            new_morph_gene->set_parameters(parameters);
-            new_morph_gene->set_randNum(randomNum);
+                gene_subset.push_back(_parent_pool[idx]);
+            Genome::Ptr new_morph_gene = _best_of_subset(gene_subset);
+            new_morph_gene->set_parameters(this->_parameters);
+            new_morph_gene->set_randNum(this->_rand_num);
 
             //Add it to the population
             EmptyGenome::Ptr ctrl_genome = std::make_shared<EmptyGenome>();
-            MEIMIndividual::Ptr ind = std::make_shared<MEIMIndividual>(new_morph_gene,ctrl_genome);
-            ind->set_parameters(parameters);
-            ind->set_randNum(randomNum);
-            if(use_fixed_control)
-                std::dynamic_pointer_cast<MEIMIndividual>(ind)->set_weight_bias(weight,bias);
+            IndPtr ind = std::make_shared<ind_t>(new_morph_gene,ctrl_genome);
+            ind->set_parameters(this->_parameters);
+            ind->set_rand_num(this->_rand_num);
             std::vector<double> init_pos;
-            init_pos = settings::getParameter<settings::Sequence<double>>(parameters,"#initPosition").value;
-            std::dynamic_pointer_cast<MEIMIndividual>(ind)->set_init_position(init_pos);
-            population.push_back(ind);
+            init_pos = settings::getParameter<settings::Sequence<double>>(this->_parameters,"#initPosition").value;
+            // std::dynamic_pointer_cast<MEIMIndividual>(ind)->set_init_position(init_pos);
+            // _population.push_back(ind);
             //-
         }
     }
 
+    Genome::Ptr _best_of_subset(const std::vector<IndPtr> &parents){
+
+        double best_fitness = parents[0]->get_objectives()[0];
+        int best_idx = 0;
+        for(size_t i = 1; i < parents.size(); i++){
+            if(best_fitness < parents[i]->get_objectives()[0]){
+                best_fitness = parents[i]->get_objectives()[0];
+                best_idx = i;
+            }
+        }
+        Genome::Ptr new_gene = parents[best_idx]->get_morph_genome()->clone();
+        new_gene->set_id(this->_highest_id++);
+        new_gene->mutate();
+        new_gene->set_parents_ids({parents[best_idx]->get_morph_genome()->id(),-1});
+        return new_gene;
+    }
+
+    void _remove_worst_parent(){
+        int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
+        if(_parent_pool.size() <= pop_size)
+            return;
+
+        //- find lowest fitness value in the parent pool
+        double lowest_obj = _parent_pool[0]->get_objectives()[0];
+        size_t worst_parent_idx = 0;
+        for(size_t i = 1; i < _parent_pool.size(); i++){
+            if(lowest_obj > _parent_pool[i]->get_objectives()[0]){
+                lowest_obj = _parent_pool[i]->get_objectives()[0];
+                worst_parent_idx = i;
+            }
+        }
+        //-
+
+        //- then erase the worst one
+        _parent_pool.erase(_parent_pool.begin() + worst_parent_idx);
+        //-
+    }
 };
 
 }

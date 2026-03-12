@@ -3,6 +3,7 @@
 
 using namespace apear;
 
+
 Genome::Genome(const misc::RandNum::Ptr &rn, const settings::ParametersMapPtr &param, int id)
     : _parameters(param),_rand_num(rn), _id(id)
 {

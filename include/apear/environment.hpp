@@ -9,7 +9,6 @@
 
 #include "apear/misc/rand_num.hpp"
 #include "apear/settings.hpp"
-#include "apear/individual.hpp"
 
 
 namespace apear {
@@ -58,13 +57,13 @@ struct waypoint{
 
 };
 
+template<class sim_t>
 class Environment{
 public:
 
-    typedef std::shared_ptr<Environment> Ptr;
-    typedef std::shared_ptr<const Environment> ConstPtr;
-    typedef Environment::Ptr (Factory)(const settings::ParametersMapPtr&);
-
+    using Ptr = std::shared_ptr<Environment>;
+    using ConstPtr = std::shared_ptr<const Environment>;
+    using Sim = sim_t;
 
     Environment(){
         _trajectory.resize(0);
@@ -82,15 +81,15 @@ public:
     /**
      * @brief Initialize the default environment scene and simulation time step size
      */
-    virtual void init() = 0;
+    virtual void init(Sim &sim) = 0;
 
     /**
      * @brief Calculate the fitness value of the robot
      * @param morph The pointer of the robot (morphology)
      */
-    virtual std::vector<double> fitness_function(const Individual::Ptr &ind) = 0;
+    virtual std::vector<double> fitness_function(Sim &sim) = 0;
 
-    virtual void update_info(double time) = 0;
+    virtual void update(double time,Sim &sim) = 0;
 
     virtual void print_info(){}
 
@@ -115,13 +114,6 @@ protected:
     std::vector<double> _final_position;
 };
 
-class DummyEnv : public Environment
-{
-public:
-    void init() override {}
-    std::vector<double> fitness_function(const Individual::Ptr &ind) override {return {0};}
-    void update_info(double time) override {}
-};
 
 }//apear
 
