@@ -18,41 +18,41 @@ static void save_string_to_file(const std::string &fileName, const std::string &
 
 };
 
-template<class ind_t>
+template<class ind_t, class sim_t>
 class Logging
 {
 public:
     typedef std::shared_ptr<Logging> Ptr;
     typedef std::shared_ptr<const Logging> ConstPtr;
+    using IndPtr = std::shared_ptr<ind_t>;
+    using SimPtr = std::shared_ptr<sim_t>;
 
-    Logging() : end_of_gen(true), end_of_run(false){}
-    Logging(bool eog, bool eor = false) : end_of_gen(eog), end_of_run(eor){}
-    Logging(const std::string &file, bool eog = true) : end_of_gen(eog){logFile = file;}
+    Logging(){}
+    Logging(const std::string &file):_log_file(file){}
     Logging(const Logging& l) :
-        logFile(l.logFile),
-        end_of_gen(l.end_of_gen),
-        end_of_run(l.end_of_run){}
+        _log_file(l._log_file){}
     virtual ~Logging(){}
 
-    virtual void saveLog(typename EA<ind_t>::Ptr& ea) = 0;
-    virtual void loadLog(const std::string &file = std::string()) = 0;
+    virtual void register_data(const IndPtr &ind,const sim_t &sim) = 0;
+    virtual void saveLog() = 0;
+    virtual void loadLog(const std::string &file = std::string()) {};
     bool openOLogFile(std::ofstream& logFileStream){
-        logFileStream.open(logging::log_folder + std::string("/")  + logFile, std::ios::out | std::ios::ate | std::ios::app);
+        logFileStream.open(logging::log_folder + std::string("/")  + _log_file, std::ios::out | std::ios::ate | std::ios::app);
 
         if(!logFileStream)
         {
-            std::cerr << "unable to open : " << logging::log_folder + std::string("/")  + logFile << std::endl;
+            std::cerr << "unable to open : " << logging::log_folder + std::string("/")  + _log_file << std::endl;
             return false;
         }
 
         return true;
     }
     bool openILogFile(std::ifstream& logFileStream){
-        logFileStream.open(logging::log_folder + std::string("/")  + logFile);
+        logFileStream.open(logging::log_folder + std::string("/")  + _log_file);
 
         if(!logFileStream)
         {
-            std::cerr << "unable to open : " << logging::log_folder + std::string("/")  + logFile << std::endl;
+            std::cerr << "unable to open : " << logging::log_folder + std::string("/")  + _log_file << std::endl;
             return false;
         }
 
@@ -83,16 +83,11 @@ public:
     }
 
     //SETTERS && GETTERS
-    const std::string &get_logFile(){return logFile;}
-    void set_logFile(const std::string& file){logFile = file;}
-    bool isEndOfGen(){return end_of_gen;}
-    bool isEndOfRun(){return end_of_run;}
-    void set_end_of_gen(bool eog){end_of_gen = eog;}
+    const std::string &get_logFile(){return _log_file;}
+    void set_logFile(const std::string& file){_log_file = file;}
 
 protected:
-    std::string logFile;
-    bool end_of_gen = true;
-    bool end_of_run = false;
+    std::string _log_file;
 };
 
 

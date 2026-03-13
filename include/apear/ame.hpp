@@ -8,10 +8,12 @@ namespace apear {
 /**
  * @brief The Asynchronous Morpho Evolution algorithm.
  */
-template<class ind_t>
+template<class ind_t, class morph_gen_t>
 class AsyncMorphoEvolution : public apear::EA<ind_t>
 {
+public:
     using IndPtr = std::shared_ptr<ind_t>;
+    using GenPtr = std::shared_ptr<morph_gen_t>;
     using Ptr = std::unique_ptr<AsyncMorphoEvolution>;
     using ConstPtr = std::unique_ptr<const AsyncMorphoEvolution>;
 
@@ -23,20 +25,24 @@ class AsyncMorphoEvolution : public apear::EA<ind_t>
     void init() override{
         int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
         this->_eval_queue.resize(pop_size);
-        for(const IndPtr& ind: this->_eval_queue){
+        for(IndPtr& ind: this->_eval_queue){
             ind = std::make_shared<ind_t>(this->_rand_num,this->_parameters);
             ind->init();
         }
     }
 
     bool update() override{
-        for(const IndPtr& ind: this->_evaluated){
+        int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
+        for(IndPtr& ind: this->_evaluated){
             _nbr_eval++;
-            _parent_pool.push_back(ind);
-            _remove_worst_parent();
+            _parent_pool.push_back(std::move(ind));
+            if(_parent_pool.size() > pop_size)
+                _remove_worst_parent();
         }
         this->evaluated().clear();
-        _reproduction();
+
+        if(_parent_pool.size() >= pop_size)
+            _reproduction();
         return true;
     }
     bool is_finish() override{
@@ -51,14 +57,14 @@ private:
 
     void _reproduction(){
         int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
-        int tournament_size = settings::getParameter<settings::Integer>(this->__parameters,"#tournamentSize").value;
+        int tournament_size = settings::getParameter<settings::Integer>(this->_parameters,"#tournamentSize").value;
 
         while(this->_eval_queue.size() < pop_size){
             //Random selection of indexes without duplicate
             std::vector<int> random_indexes;
-            random_indexes.push_back(this->_rand_num->randInt(0,_parent_pool.size()-1));
+            random_indexes.push_back(this->_rand_num->rand_int(0,_parent_pool.size()-1));
             do{
-                int rand_idx = this->_rand_num->randInt(0,_parent_pool.size()-1);
+                int rand_idx = this->_rand_num->rand_int(0,_parent_pool.size()-1);
                 bool already_drawn = false;
                 for(const int& idx: random_indexes)
                     if(idx == rand_idx){
@@ -74,7 +80,7 @@ private:
             std::vector<IndPtr> gene_subset;
             for(const int &idx: random_indexes)
                 gene_subset.push_back(_parent_pool[idx]);
-            Genome::Ptr new_morph_gene = _best_of_subset(gene_subset);
+            GenPtr new_morph_gene = _best_of_subset(gene_subset);
             new_morph_gene->set_parameters(this->_parameters);
             new_morph_gene->set_randNum(this->_rand_num);
 
@@ -83,15 +89,12 @@ private:
             IndPtr ind = std::make_shared<ind_t>(new_morph_gene,ctrl_genome);
             ind->set_parameters(this->_parameters);
             ind->set_rand_num(this->_rand_num);
-            std::vector<double> init_pos;
-            init_pos = settings::getParameter<settings::Sequence<double>>(this->_parameters,"#initPosition").value;
-            // std::dynamic_pointer_cast<MEIMIndividual>(ind)->set_init_position(init_pos);
-            // _population.push_back(ind);
+            this->_eval_queue.push_back(ind);
             //-
         }
     }
 
-    Genome::Ptr _best_of_subset(const std::vector<IndPtr> &parents){
+    GenPtr _best_of_subset(const std::vector<IndPtr> &parents){
 
         double best_fitness = parents[0]->get_objectives()[0];
         int best_idx = 0;
@@ -101,7 +104,7 @@ private:
                 best_idx = i;
             }
         }
-        Genome::Ptr new_gene = parents[best_idx]->get_morph_genome()->clone();
+        GenPtr new_gene = std::dynamic_pointer_cast<morph_gen_t>(parents[best_idx]->get_morph_genome()->clone());
         new_gene->set_id(this->_highest_id++);
         new_gene->mutate();
         new_gene->set_parents_ids({parents[best_idx]->get_morph_genome()->id(),-1});

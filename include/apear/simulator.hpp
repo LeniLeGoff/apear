@@ -41,7 +41,7 @@ public:
      */
     virtual bool step() = 0;
 
-    virtual void update_robot(const IndPtr &ind){}
+    virtual bool update_robot(const IndPtr &ind){return true;}
 
     /**
      * @brief stop the simulation

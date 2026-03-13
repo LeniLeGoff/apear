@@ -54,37 +54,42 @@ public:
                           [&](tbb::blocked_range<size_t> r){
                               for(size_t sim_idx = r.begin(); sim_idx != r.end(); ++sim_idx)
                               {
-       // for(size_t sim_idx = 0; sim_idx < _simulators.size(); sim_idx++){
-                                  if(_ind_vec[sim_idx] == nullptr)
-                                      continue;
-                                  sim_t &sim = _simulators[sim_idx];
-                                  if(sim.state() == sim_state_t::IDLE){
-                                      if(verbose)
-                                          std::cout << "simulation " << sim_idx <<  " initializing" << std::endl;
+        // for(size_t sim_idx = 0; sim_idx < _simulators.size(); sim_idx++){
+            if(_ind_vec[sim_idx] == nullptr)
+                continue;
+            sim_t &sim = _simulators[sim_idx];
+            if(sim.state() == sim_state_t::IDLE){
+                if(verbose)
+                    std::cout << "simulation " << sim_idx <<  " initializing" << std::endl;
 
-                                      _environment->init(sim);
-                                      sim.init(_ind_vec[sim_idx]);
-                                  }else if(sim.state() == sim_state_t::INITIALIZED){
-                                      sim.update_robot(_ind_vec[sim_idx]);
-                                      _environment->update(sim.time(),sim);
-                                      if(sim.step()){
-                                          // if(verbose)
-                                              // std::cout << "simulation " << sim_idx <<  " running" << std::endl;
-                                      }else{
-                                          std::cerr << "simulation " << sim_idx << " encountered an error while running" << std::endl;
-                                      }
-                                  }else if(sim.state() == sim_state_t::FINISHED){
-                                      if(verbose)
-                                          std::cout << "simulation " << sim_idx <<  " finished" << std::endl;
-                                      _ind_vec[sim_idx]->set_objectives(_environment->fitness_function(sim));
-                                      sim.set_state(sim_state_t::IDLE);
-                                      if(verbose)
-                                          std::cout << "ind " << _ind_vec[sim_idx]->get_morph_genome()->id()
-                                                    << " as fitness " << _ind_vec[sim_idx]->get_objectives()[0] << std::endl;
-                                      _ea->evaluated().push_back(_ind_vec[sim_idx]);
-                                      _ind_vec[sim_idx].reset();
-                                  }
-                              }//for each simulators
+                _environment->init(sim);
+                sim.init(_ind_vec[sim_idx]);
+            }else if(sim.state() == sim_state_t::INITIALIZED){
+                if(!sim.update_robot(_ind_vec[sim_idx]) || //if update robot return false it means no controller.
+                    !_environment->update(sim.time(),sim)){// or if env update return false it corresponds to an early stopping condition.
+                    sim.stop();
+                    continue;
+                }
+                register_data(_ind_vec[sim_idx],sim);
+                if(sim.step()){
+                    // if(verbose)
+                    // std::cout << "simulation " << sim_idx <<  " running" << std::endl;
+                }else{
+                    std::cerr << "simulation " << sim_idx << " encountered an error while running" << std::endl;
+                }
+
+            }else if(sim.state() == sim_state_t::FINISHED){
+                if(verbose)
+                    std::cout << "simulation " << sim_idx <<  " finished" << std::endl;
+                _ind_vec[sim_idx]->set_objectives(_environment->fitness_function(sim));
+                sim.set_state(sim_state_t::IDLE);
+                if(verbose)
+                    std::cout << "ind " << _ind_vec[sim_idx]->get_morph_genome()->id()
+                              << " as fitness " << _ind_vec[sim_idx]->get_objectives()[0] << std::endl;
+                assert(_ind_vec[sim_idx] != nullptr);
+                _ea->evaluated().push_back(std::move(_ind_vec[sim_idx]));
+            }
+        }//for each simulators
         });//tbb::parallel
         _ea->update();
         save_logs();
@@ -106,12 +111,12 @@ public:
             int eval_order = settings::getParameter<settings::Integer>(_parameters,"#evaluationOrder").value;
             if(eval_order == EvalOrder::FILO){
                 //First in Last out
-                _ind_vec[i] = _ea->eval_queue().back();
+                _ind_vec[i] = std::move(_ea->eval_queue().back());
                 _ea->eval_queue().erase(_ea->eval_queue().begin()+_ea->eval_queue().size()-1);
             }
             else if(eval_order == EvalOrder::FIFO){
                 //First in First out
-                _ind_vec[i] = _ea->eval_queue().front();
+                _ind_vec[i] = std::move(_ea->eval_queue().front());
                 _ea->eval_queue().erase(_ea->eval_queue().begin());
             }
         }
@@ -126,12 +131,19 @@ public:
 
     void set_ea(EAPtr &ea){ea.swap(_ea);}
 
-    void save_logs(bool end_of_gen = false){
-        for(const auto &log : _logging_fcts){
-            if(log->isEndOfGen() == end_of_gen && !log->isEndOfRun()){
-                log->saveLog(_ea);
-            }
+    void save_logs(){
+        for(const auto &log : _logging_fcts){      
+            log->saveLog();
         }
+    }
+
+    void register_data(const IndPtr &ind,const sim_t &sim){
+        for(const auto &log : _logging_fcts){
+            log->register_data(ind,sim);
+        }
+    }
+    void add_logging(const typename Logging<ind_t,sim_t>::Ptr &log){
+        _logging_fcts.push_back(log);
     }
 
 private:
@@ -144,7 +156,7 @@ private:
     /// Pointer to the Environment class
     EnvPtr _environment;
 
-    std::vector<typename Logging<ind_t>::Ptr> _logging_fcts;
+    std::vector<typename Logging<ind_t,sim_t>::Ptr> _logging_fcts;
     int _population_size;
 
     std::vector<sim_t> _simulators;
