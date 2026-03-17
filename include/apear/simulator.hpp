@@ -64,7 +64,7 @@ public:
      * @brief querry the current simulation time
      * @return the current simulation time;
      */
-    virtual double time() = 0;
+    virtual double time() const = 0;
 
     virtual void reconnect() = 0;
 

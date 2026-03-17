@@ -10,7 +10,6 @@
 
 namespace apear {
 
-
 class Individual
 {
 public:
@@ -86,8 +85,12 @@ public:
     void set_parameters(const settings::ParametersMapPtr &param){_parameters = param;}
     const settings::ParametersMapPtr &get_parameters() const {return _parameters;}
 
+    const int id() const {return _morph_genome->id();}
+    void set_id(int id){_morph_genome->set_id(id);}
+
     virtual std::string to_string() const;
     virtual void from_string(const std::string &str);
+
 
 
     const Learner::Ptr & get_learner(){return _learner;}

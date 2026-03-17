@@ -78,7 +78,6 @@ protected:
 
     bool _initialized = false;
     std::string _type;
-    static int _highest_id;
     int _id;
     std::vector<int> _parents_ids;
 

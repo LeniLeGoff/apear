@@ -91,8 +91,9 @@ public:
             }
         }//for each simulators
         });//tbb::parallel
+        if(!_ea->evaluated().empty())
+            save_logs();
         _ea->update();
-        save_logs();
         if(_ea->is_finish()){
             if(verbose)
             {
@@ -132,8 +133,8 @@ public:
     void set_ea(EAPtr &ea){ea.swap(_ea);}
 
     void save_logs(){
-        for(const auto &log : _logging_fcts){      
-            log->saveLog();
+        for(const auto &log : _logging_fcts){
+            log->saveLog(_ea);
         }
     }
 

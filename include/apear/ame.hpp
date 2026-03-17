@@ -28,6 +28,7 @@ public:
         for(IndPtr& ind: this->_eval_queue){
             ind = std::make_shared<ind_t>(this->_rand_num,this->_parameters);
             ind->init();
+            ind->set_id(this->_highest_id++);
         }
     }
 
@@ -81,8 +82,7 @@ private:
             for(const int &idx: random_indexes)
                 gene_subset.push_back(_parent_pool[idx]);
             GenPtr new_morph_gene = _best_of_subset(gene_subset);
-            new_morph_gene->set_parameters(this->_parameters);
-            new_morph_gene->set_randNum(this->_rand_num);
+
 
             //Add it to the population
             EmptyGenome::Ptr ctrl_genome = std::make_shared<EmptyGenome>();

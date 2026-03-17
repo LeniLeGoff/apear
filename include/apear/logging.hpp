@@ -33,8 +33,8 @@ public:
         _log_file(l._log_file){}
     virtual ~Logging(){}
 
-    virtual void register_data(const IndPtr &ind,const sim_t &sim) = 0;
-    virtual void saveLog() = 0;
+    virtual void register_data(const IndPtr &ind,const sim_t &sim){};
+    virtual void saveLog(const typename EA<ind_t>::Ptr &ind) = 0;
     virtual void loadLog(const std::string &file = std::string()) {};
     bool openOLogFile(std::ofstream& logFileStream){
         logFileStream.open(logging::log_folder + std::string("/")  + _log_file, std::ios::out | std::ios::ate | std::ios::app);
