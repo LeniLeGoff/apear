@@ -52,6 +52,8 @@ public:
         return false;
     }
 
+    const std::vector<IndPtr> &get_parent_pool() const{return _parent_pool;}
+
 private:
     std::vector<IndPtr> _parent_pool;
     int _nbr_eval = 0;

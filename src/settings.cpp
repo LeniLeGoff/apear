@@ -6,16 +6,11 @@ using namespace apear;
 settings::ParametersMapPtr settings::defaults::parameters = std::make_shared<settings::ParametersMap>(
             []() -> settings::ParametersMap{
                 settings::ParametersMap parameters;
-                parameters.emplace("#repository",std::make_shared<settings::String>("~/are-logs"));
                 parameters.emplace("#populationSize",std::make_shared<settings::Integer>(50));
-                parameters.emplace("#maxEvalTime",std::make_shared<settings::Float>(60));
-                parameters.emplace("#numberOfGeneration",std::make_shared<settings::Float>(1000));
-                parameters.emplace("#maxEvalTime",std::make_shared<settings::Float>(60));
-                parameters.emplace("#timeStep",std::make_shared<settings::Float>(0.05));
+                parameters.emplace("#simTimeStep",std::make_shared<settings::Double>(0.05));
+                parameters.emplace("#maxEpisodeTime",std::make_shared<settings::Double>(60));
                 parameters.emplace("#verbose",std::make_shared<settings::Boolean>(0));
-                parameters.emplace("#seed",std::make_shared<settings::Integer>(-1));
-                parameters.emplace("#debugDisplayOnPi",std::make_shared<settings::Boolean>(0));
-                return parameters;
+                parameters.emplace("#seed",std::make_shared<settings::Integer>(-1));                return parameters;
             }());
 
 settings::ParametersMapPtr settings::random::parameters(std::make_shared<settings::ParametersMap>());

@@ -1,4 +1,5 @@
 #include "apear/data.hpp"
+#include "apear/misc/utilities.hpp"
 #include <sstream>
 
 using namespace apear;
@@ -12,7 +13,22 @@ std::string act_obs_t::to_string() const{
     sstr << ";" << action[0];
     for(size_t i = 1; i < action.size(); i++)
         sstr << "," << action[i];
+    //TODO add return value to the string
     return sstr.str();
+}
+
+void act_obs_t::from_string(const std::string& str){
+    std::vector<std::string> split_str;
+    apear::misc::split_line(str,";",split_str);
+    time = std::stod(split_str[0]);
+    std::vector<std::string> obs_str, act_str;
+    apear::misc::split_line(split_str[1],",",obs_str);
+    apear::misc::split_line(split_str[2],",",act_str);
+    for(const std::string& s: obs_str)
+        observation.push_back(std::stod(s));
+    for(const std::string& s: act_str)
+        action.push_back(std::stod(s));
+    //TODO add return value from the string
 }
 
 std::string waypoint_t::to_string() const{

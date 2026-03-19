@@ -18,6 +18,7 @@ struct act_obs_t{
     std::vector<double> action;
     double ret;
     std::string to_string() const;
+    void from_string(const std::string& str);
 
 };
 using rollout_t = std::vector<act_obs_t>;

@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <memory>
+#include <mutex>
 #include "apear/ea.hpp"
 
 namespace apear {
@@ -33,7 +34,10 @@ public:
         _log_file(l._log_file){}
     virtual ~Logging(){}
 
-    virtual void register_data(const IndPtr &ind,const sim_t &sim){};
+    void register_data(const IndPtr &ind,const sim_t &sim){
+        const std::lock_guard<std::mutex> lock(_mutex);
+        _register_data(ind,sim);
+    };
     virtual void saveLog(const typename EA<ind_t>::Ptr &ind) = 0;
     virtual void loadLog(const std::string &file = std::string()) {};
     bool openOLogFile(std::ofstream& logFileStream){
@@ -88,6 +92,9 @@ public:
 
 protected:
     std::string _log_file;
+    virtual void _register_data(const IndPtr &ind,const sim_t &sim){}
+private:
+    std::mutex _mutex;
 };
 
 

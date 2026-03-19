@@ -58,36 +58,42 @@ public:
             if(_ind_vec[sim_idx] == nullptr)
                 continue;
             sim_t &sim = _simulators[sim_idx];
+            IndPtr &ind = _ind_vec[sim_idx];
+            EnvPtr &env = _environments[sim_idx];
             if(sim.state() == sim_state_t::IDLE){
                 if(verbose)
                     std::cout << "simulation " << sim_idx <<  " initializing" << std::endl;
 
-                _environment->init(sim);
-                sim.init(_ind_vec[sim_idx]);
-            }else if(sim.state() == sim_state_t::INITIALIZED){
-                if(!sim.update_robot(_ind_vec[sim_idx]) || //if update robot return false it means no controller.
-                    !_environment->update(sim.time(),sim)){// or if env update return false it corresponds to an early stopping condition.
+                env->init(sim);
+                if(!sim.init(ind))
                     sim.stop();
-                    continue;
-                }
-                register_data(_ind_vec[sim_idx],sim);
-                if(sim.step()){
-                    // if(verbose)
-                    // std::cout << "simulation " << sim_idx <<  " running" << std::endl;
+            }
+            if(sim.state() == sim_state_t::INITIALIZED){
+                if(!sim.update_robot(ind) || //if update robot return false it means no controller.
+                    !env->update(sim.time(),sim)){// or if env update return false it corresponds to an early stopping condition.
+                    sim.stop();
                 }else{
-                    std::cerr << "simulation " << sim_idx << " encountered an error while running" << std::endl;
+                    register_data(ind,sim);
+                    if(sim.step()){
+                        // if(verbose)
+                        // std::cout << "simulation " << sim_idx <<  " running" << std::endl;
+                    }else{
+                        if(verbose)
+                            std::cerr << "simulation " << sim_idx << " stopped" << std::endl;
+                    }
                 }
-
-            }else if(sim.state() == sim_state_t::FINISHED){
+            }
+            if(sim.state() == sim_state_t::FINISHED){
                 if(verbose)
                     std::cout << "simulation " << sim_idx <<  " finished" << std::endl;
-                _ind_vec[sim_idx]->set_objectives(_environment->fitness_function(sim));
+                ind->set_objectives(env->fitness_function(sim));
                 sim.set_state(sim_state_t::IDLE);
                 if(verbose)
-                    std::cout << "ind " << _ind_vec[sim_idx]->get_morph_genome()->id()
-                              << " as fitness " << _ind_vec[sim_idx]->get_objectives()[0] << std::endl;
-                assert(_ind_vec[sim_idx] != nullptr);
-                _ea->evaluated().push_back(std::move(_ind_vec[sim_idx]));
+                    std::cout << "ind " << ind->get_morph_genome()->id()
+                              << " as fitness " << ind->get_objectives()[0] << std::endl;
+                assert(ind != nullptr);
+                std::lock_guard<std::mutex> lock(_mutex);
+                _ea->evaluated().push_back(std::move(ind));
             }
         }//for each simulators
         });//tbb::parallel
@@ -108,7 +114,7 @@ public:
     void individuals_distribution(){
         for(int i = 0; i < _ind_vec.size(); i++){
             if(_ea->eval_queue().empty() || _ind_vec[i] != nullptr)
-                break;
+                continue;
             int eval_order = settings::getParameter<settings::Integer>(_parameters,"#evaluationOrder").value;
             if(eval_order == EvalOrder::FILO){
                 //First in Last out
@@ -128,7 +134,15 @@ public:
     const misc::RandNum::Ptr &get_rand_num(){return _rand_num;}
     void set_rand_num(const misc::RandNum::Ptr &rn){_rand_num = rn;}
 
-    void set_environment(const EnvPtr &env){_environment = env;}
+    template<class env_t,typename... args_t>
+    void set_environment(args_t... args){
+        if(_simulators.empty()){
+            std::cerr << "Asynch Dealer ERROR: please init the dealer before setting the environment" << std::endl;
+            return;
+        }
+        for(int i = 0; i < _simulators.size(); i++)
+            _environments.push_back(std::make_shared<env_t>(args...));
+    }
 
     void set_ea(EAPtr &ea){ea.swap(_ea);}
 
@@ -154,12 +168,12 @@ private:
     EAPtr _ea;
     /// pointer to random number generator of EA
     misc::RandNum::Ptr _rand_num;
-    /// Pointer to the Environment class
-    EnvPtr _environment;
+
 
     std::vector<typename Logging<ind_t,sim_t>::Ptr> _logging_fcts;
     int _population_size;
 
+    std::vector<EnvPtr> _environments;
     std::vector<sim_t> _simulators;
     int _nbr_of_instances = 1;
     std::vector<IndPtr> _ind_vec;
@@ -171,6 +185,8 @@ private:
 
     hr_clock::time_point _start_overhead_time;
     hr_clock::time_point _end_overhead_time;
+
+    std::mutex _mutex;
 
     bool _is_all_simulators_finished();
     const int _max_connection_trials = 3;

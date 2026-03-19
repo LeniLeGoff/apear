@@ -275,16 +275,6 @@ std::shared_ptr<const T> cast(const Type::ConstPtr val)
     return std::dynamic_pointer_cast<const T>(val);
 }
 
-/// Instance type defines in what mode the "Evolutionary Robotics" plugin runs // TODO: define name
-enum InstanceType {
-    /// Single thread (local)
-    INSTANCE_REGULAR = 0,
-    /// Waits for genome signals for using in parallel execution
-    INSTANCE_SERVER = 1,
-    /// deprecated
-    INSTANCE_DEBUGGING = 2
-};
-
 typedef std::map<const std::string,const Type::ConstPtr> ParametersMap;
 typedef std::shared_ptr<ParametersMap> ParametersMapPtr;
 
@@ -306,9 +296,15 @@ template<typename T>
 T getParameter(const ParametersMapPtr &params,const std::string& name)
 {
     if(params == nullptr){
-        std::cerr << "are::settings::getParameter error: params is empty - queried parameter: " << name << std::endl;
-        exit(1);
-        return T();
+        if(settings::defaults::parameters->find(name) == settings::defaults::parameters->end()){
+            std::cerr << "are::settings::getParameter error: params is empty - queried parameter: " << name << std::endl;
+            std::cerr << "and no default value found, exiting now" << std::endl;
+            exit(1);
+        }
+
+        T res = *(cast<T>(defaults::parameters->at(name)));
+        std::cerr << "Using default value : " << res << std::endl;
+        return res;
     }
     if(params->find(name) == params->end()){
         std::cerr << "are::settings::getParameter error: Unable to find parameters " << name << " of type " << T().name << std::endl
@@ -373,44 +369,7 @@ ParametersMap loadParameters(const std::string& file);
  */
 void saveParameters(const std::string& file,const ParametersMapPtr &param);
 
-//To re-evaluate, likely to be removed
-struct Property
-{
-    typedef std::shared_ptr<Property> Ptr;
-    typedef std::shared_ptr<const Property> ConstPtr;
 
-    Property(){}
-    Property(const Property& prop) :
-        generation(prop.generation)
-    {}
-
-    //Properties
-    int generation = 0;
-    std::vector<int> indNumbers;
-    std::vector<double> indFits;
-    int indCounter = 0;
-    int clientID;
-};
-
-
-enum genomeType {
-    NEAT = 0,
-    NN = 1,
-    NNPARAM = 2
-};
-
-typedef enum obsType {
-    FINAL_POS = 0,
-    TRAJECTORY = 1,
-    POS_TRAJ = 2,
-    OBJ = 3
-}obsType;
-
-typedef enum jointCtrlType {
-    DIRECT = 0,
-    PROPORTIONAL = 1,
-    OSCILLATORY = 2
-}jointCtrlType;
 
 } //settings
 
