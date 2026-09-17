@@ -38,7 +38,7 @@ public:
 
     bool init(int nbr_sim = 1, bool headless = true){
         for(int i = 0; i < nbr_sim; i++){
-            _simulators.push_back(sim_t(_parameters, headless));
+            _simulators.push_back(sim_t(_parameters, _rand_num, headless));
         }
         _ind_vec.resize(nbr_sim);
         return true;

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "apear/settings.hpp"
+#include "apear/misc/rand_num.hpp"
 
 namespace apear {
 
@@ -22,9 +23,13 @@ public:
     typedef std::unique_ptr<const Simulator> ConstPtr;
 
     Simulator(){}
-    Simulator(settings::ParametersMapPtr param, bool headless = true) : _parameters(param), _headless(headless){}
+    Simulator(settings::ParametersMapPtr param, misc::RandNum::Ptr rand_num, bool headless = true) :
+        _parameters(param),
+        _rand_num(rand_num),
+        _headless(headless){}
     Simulator(const Simulator& sim) :
         _parameters(sim._parameters),
+        _rand_num(sim._rand_num),
         _state(sim._state),
         _headless(sim._headless)
     {}
@@ -72,6 +77,7 @@ public:
 
 protected:
     settings::ParametersMapPtr _parameters;
+    misc::RandNum::Ptr _rand_num;
     sim_state_t _state = sim_state_t::IDLE;
     bool _headless = true;
 

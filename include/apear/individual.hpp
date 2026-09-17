@@ -71,6 +71,7 @@ public:
     virtual Eigen::VectorXd descriptor(){return Eigen::VectorXd::Zero(1);}
 
     void set_rand_num(const misc::RandNum::Ptr &rn){_rand_num = rn;}
+    const misc::RandNum::Ptr get_rand_num() const {return _rand_num;}
 
     bool is_init(){return (_control != nullptr && _morphology != nullptr);}
 

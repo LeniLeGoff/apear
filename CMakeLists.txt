@@ -3,6 +3,9 @@ project(apear)
 
 include(GNUInstallDirs)
 
+find_package(Torch REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -17,7 +20,7 @@ target_include_directories(apear PUBLIC
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     "/usr/include/eigen3"
 )
-target_link_libraries(apear tbb) #Boost::serialization Boost::filesystem)
+target_link_libraries(apear tbb  "${TORCH_LIBRARIES}") #Boost::serialization Boost::filesystem)
 target_compile_options(apear PRIVATE -Wall -Werror)
 
 
@@ -64,3 +67,5 @@ install(
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/apear"
   )
 
+
+add_subdirectory(tests)
