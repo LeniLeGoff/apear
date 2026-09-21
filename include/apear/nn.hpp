@@ -170,6 +170,9 @@ struct CPGRBFNetwork: torch::nn::Module{
      */
     CPGRBFNetwork(int nbr_inputs, int nbr_hidden,int nbr_outputs, double init_state = 0.2);
     torch::Tensor forward(torch::Tensor inputs);
+    torch::Tensor cpgrbf_forward();
+    torch::Tensor out_forward(torch::Tensor&,const torch::Tensor&);
+
 
     /**
      * @brief init the parameters of the cpg to have a stable sine wave.

@@ -310,14 +310,25 @@ CPGRBFNetwork::CPGRBFNetwork(int nbr_inputs, int nbr_hidden, int nbr_outputs,  d
 }
 
 torch::Tensor CPGRBFNetwork::forward(torch::Tensor inputs){
-    torch::Tensor x = _cpg->as<CPGCell>()->forward();
     // x = torch::cat({inputs,x},0);
     // x = _in->forward(x);
     // x = torch::tanh(x);
+    torch::Tensor x = cpgrbf_forward();
+    return out_forward(x,inputs);
+    return x;
+}
+
+torch::Tensor CPGRBFNetwork::cpgrbf_forward(){
+    torch::Tensor x = _cpg->as<CPGCell>()->forward();
     x = _rbf->forward(x);
-    x = _out->forward(x);
-    // x = torch::sub(x,inputs);
-    return torch::tanh(x);
+    return x;
+}
+
+torch::Tensor CPGRBFNetwork::out_forward(torch::Tensor &x,const torch::Tensor &inputs){
+    x = torch::tanh(_out->forward(x));
+    // torch::Tensor diff = torch::abs(torch::sub(x,inputs));
+    // x = torch::mul(x,diff);
+    return x;
 }
 
 void CPGRBFNetwork::init_cpg(double alpha, double phi){

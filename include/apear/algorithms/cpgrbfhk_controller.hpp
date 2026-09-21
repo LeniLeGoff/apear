@@ -50,10 +50,9 @@ public:
         _set_default_config();
     }
     CPGRBFHK(int nb_outputs): Control(),
-        _nn(0,40,nb_outputs)
+        _nbr_inputs(40),_nbr_outputs(nb_outputs),_nn(0,40,nb_outputs)
     {
         _set_default_config();
-        init(40,nb_outputs);
     }
     CPGRBFHK(const CPGRBFHK& ctrl):
         Control(ctrl),
@@ -88,7 +87,8 @@ public:
         x_smooth = ctrl.x_smooth;
     }
 
-    void init(int nb_inputs, int nb_outputs);
+    void init();
+    void init(int nb_outputs);
 
     Control::Ptr clone() const override{
         return std::make_shared<CPGRBFHK>(*this);
@@ -97,7 +97,6 @@ public:
     std::vector<double> update(const std::vector<double> &sensorValues) override;
 
 
-    void step(const Matrix &x, Matrix &y);
 
     void learn();
 

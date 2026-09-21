@@ -3,37 +3,52 @@
 using namespace apear;
 using namespace apear::hk;
 
-void CPGRBFHK::init(int nb_inputs, int nb_outputs){
-    _nbr_inputs = nb_inputs;
+void CPGRBFHK::init(int nb_outputs){
+    _nbr_inputs = 40;
     _nbr_outputs = nb_outputs;
-
+    init();
+}
+void CPGRBFHK::init(){
     _nn.init_cpg(1.01,0.03);
     _nn.init_rbf();
 
-    A = Eigen::MatrixXd::Identity(nb_inputs,nb_outputs);
-    S = Eigen::MatrixXd::Identity(nb_inputs,nb_inputs);
-    C = Eigen::MatrixXd::Identity(nb_outputs,nb_inputs);
-    b = Eigen::MatrixXd::Zero(nb_inputs,1);
-    h = Eigen::MatrixXd::Zero(nb_outputs,1);
-    L = Eigen::MatrixXd::Zero(nb_inputs,nb_inputs);
-    v_avg = Eigen::MatrixXd::Zero(nb_inputs,1);
-    A_native = Eigen::MatrixXd::Identity(nb_inputs,nb_outputs);
-    C_native = Eigen::MatrixXd::Identity(nb_outputs,nb_inputs);
+    _conf.epsA = settings::getParameter<settings::Double>(_parameters,"#epsilonA").value;
+    _conf.epsC = settings::getParameter<settings::Double>(_parameters,"#epsilonC").value;
+    creativity = settings::getParameter<settings::Double>(_parameters,"#creativity").value;
 
-    R = Eigen::MatrixXd::Zero(nb_inputs,nb_inputs);
+
+    A = Eigen::MatrixXd::Identity(_nbr_inputs,_nbr_outputs);
+    S = Eigen::MatrixXd::Identity(_nbr_inputs,_nbr_inputs);
+    C = Eigen::MatrixXd::Identity(_nbr_outputs,_nbr_inputs);
+    b = Eigen::MatrixXd::Zero(_nbr_inputs,1);
+    h = Eigen::MatrixXd::Zero(_nbr_outputs,1);
+    L = Eigen::MatrixXd::Zero(_nbr_inputs,_nbr_inputs);
+    v_avg = Eigen::MatrixXd::Zero(_nbr_inputs,1);
+    A_native = Eigen::MatrixXd::Identity(_nbr_inputs,_nbr_outputs);
+    C_native = Eigen::MatrixXd::Identity(_nbr_outputs,_nbr_inputs);
+
+    R = Eigen::MatrixXd::Zero(_nbr_inputs,_nbr_inputs);
 
     C*=_conf.initFeedbackStrength;
     S*=0.05f;
     C_native*=1.2f;
 
-    y_teaching = Eigen::MatrixXd::Zero(nb_outputs,1);
-    x = Eigen::MatrixXd::Zero(nb_inputs,1);
-    x_smooth = Eigen::MatrixXd::Zero(nb_inputs,1);
+    _nn.set_out_layer_parameters(
+        torch::from_blob(C.data(),
+                         {40*_nbr_outputs},
+                         torch::TensorOptions().dtype(torch::kDouble)),
+        torch::from_blob(h.data(),
+                         {_nbr_outputs},
+                         torch::TensorOptions().dtype(torch::kDouble)));
+
+    y_teaching = Eigen::MatrixXd::Zero(_nbr_outputs,1);
+    x = Eigen::MatrixXd::Zero(_nbr_inputs,1);
+    x_smooth = Eigen::MatrixXd::Zero(_nbr_inputs,1);
     x_buffer.resize(_conf.buffersize);
     y_buffer.resize(_conf.buffersize);
     for (size_t k = 0; k < _conf.buffersize; k++) {
-        x_buffer[k] = Eigen::MatrixXd::Zero(nb_inputs,1);
-        y_buffer[k] = Eigen::MatrixXd::Zero(nb_outputs,1);
+        x_buffer[k] = Eigen::MatrixXd::Zero(_nbr_inputs,1);
+        y_buffer[k] = Eigen::MatrixXd::Zero(_nbr_outputs,1);
     }
 
 }
@@ -42,26 +57,54 @@ std::vector<double> CPGRBFHK::update(const std::vector<double> &sensorValues){
     //step 1: learn
     learn();
     //step 2: step
-    misc::stdvect_to_eigenmat(sensorValues,x);
-    Matrix y;
-    step(x,y);
+    // misc::stdvect_to_eigenmat(sensorValues,x);
+
+    _nn.set_out_layer_parameters(torch::from_blob(C.data(),
+                                                  {40*_nbr_outputs},
+                                                  torch::TensorOptions().dtype(torch::kDouble)),
+                                 torch::from_blob(h.data(),
+                                                  {_nbr_outputs},
+                                                  torch::TensorOptions().dtype(torch::kDouble)));
+
+
+    torch::Tensor x_tensor = _nn.cpgrbf_forward();
+    x =  Eigen::Map<Matrix>(static_cast<double*>(x_tensor.data_ptr()),x_tensor.size(0),1);
+
+    // averaging over the last s4avg values of x_buffer
+    _conf.steps4Averaging = std::clamp<size_t>(_conf.steps4Averaging,1,_conf.buffersize-1);
+    if(_conf.steps4Averaging > 1) //TODO: restart from there.
+        x_smooth += (x - x_smooth)*(1.0/_conf.steps4Averaging);
+    else
+        x_smooth = x;
+
+    x_buffer[t%_conf.buffersize] = x_smooth; // we store the smoothed sensor value
+
+    // x_tensor = x_tensor + std::sqrt(0.1)*torch::randn({40});
+    std::vector<double> sensor_vals = sensorValues;
+    torch::Tensor inputs = torch::from_blob(sensor_vals.data(),{static_cast<long>(sensorValues.size())},
+                                            torch::TensorOptions().dtype(torch::kDouble));
+    torch::Tensor out = _nn.out_forward(x_tensor,inputs);
+
+    Matrix y = Eigen::Map<Matrix>(static_cast<double*>(out.data_ptr()),out.size(0),1);
+
+
+    // Put new output vector in ring buffer y_buffer
+    y_buffer[t%_conf.buffersize] = y;
+
+    // convert y to motor*
+    //y.convertToBuffer(y, number_motors);
+
+    // update step counter
+    t++;
+
     std::vector<double> ctrl_cmd;
     misc::eigenvect_to_stdvect(y,ctrl_cmd);
+    // for(size_t i = 0; i < ctrl_cmd.size(); i++)
+    //     ctrl_cmd[i] = ctrl_cmd[i] + sensorValues[i];
     return ctrl_cmd;
 }
 
-void CPGRBFHK::step(const Matrix &x,  Matrix &y){
-    _nn.set_out_layer_parameters(
-        torch::from_blob(C.data(),
-                         {40*_nbr_outputs},
-                         torch::TensorOptions().dtype(torch::kDouble)),
-        torch::zeros(40));
 
-    torch::Tensor out = _nn.forward(torch::empty(1));
-
-    y = Eigen::Map<Matrix>(static_cast<double*>(out.data_ptr()),out.size(0),out.size(1));
-
-}
 
 void CPGRBFHK::learn(){
     using std::tanh;
@@ -74,7 +117,9 @@ void CPGRBFHK::learn(){
     const Matrix& xi      = x_fut  - (A * y_creat + b + S * x); // here we use creativity
 
     const Matrix& z       = (C * (x) + h); // here no creativity
-    const Matrix& y       = z.array().tanh();
+    //const Matrix& y       = z.array().tanh();
+    torch::Tensor out = _nn.forward(torch::empty(1));
+    const Matrix& y = Eigen::Map<Matrix>(static_cast<double*>(out.data_ptr()),out.size(0),1);
     Matrix g_prime = z;
     _tanh_diff(g_prime);
 

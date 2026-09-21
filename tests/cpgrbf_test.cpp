@@ -32,12 +32,12 @@ int main(int argc, char** argv){
 
     torch::Tensor x = torch::zeros(1);
     for(int i = 0; i < 1000; i++){
-        x = cpgrbf.forward(torch::zeros(1,torch::TensorOptions().dtype(torch::kDouble)));
+        x = cpgrbf.forward(x);
         std::cout << cpgrbf.get_cpg()->neuron_states().data_ptr<double>()[0] << ","
                   << cpgrbf.get_cpg()->neuron_states().data_ptr<double>()[1] << ",";
 
-        // if(i < 500)
-        //     x = x + normal(gen);
+        if(i < 500)
+            x = x + normal(gen);
         std::cout << x.data_ptr<double>()[0] << "," << std::endl;
                 // << x.data_ptr<double>()[1] << ","
                 // << x.data_ptr<double>()[2] << ","
