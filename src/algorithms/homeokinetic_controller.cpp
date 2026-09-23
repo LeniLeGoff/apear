@@ -3,34 +3,43 @@
 using namespace apear;
 using namespace apear::hk;
 
-void Homeokinesis::init(int nb_inputs, int nb_outputs){
+
+
+void Homeokinesis::init(int nb_inputs, int nb_outputs){    
     _nbr_inputs = nb_inputs;
     _nbr_outputs = nb_outputs;
+    init();
+}
+void Homeokinesis::init(){
+    _conf.epsA = settings::getParameter<settings::Double>(_parameters,"#epsilonA").value;
+    _conf.epsC = settings::getParameter<settings::Double>(_parameters,"#epsilonC").value;
+    creativity = settings::getParameter<settings::Double>(_parameters,"#creativity").value;
 
-    A = Eigen::MatrixXd::Identity(nb_inputs,nb_outputs);
-    S = Eigen::MatrixXd::Identity(nb_inputs,nb_inputs);
-    C = Eigen::MatrixXd::Identity(nb_outputs,nb_inputs);
-    b = Eigen::MatrixXd::Zero(nb_inputs,1);
-    h = Eigen::MatrixXd::Zero(nb_outputs,1);
-    L = Eigen::MatrixXd::Zero(nb_inputs,nb_inputs);
-    v_avg = Eigen::MatrixXd::Zero(nb_inputs,1);
-    A_native = Eigen::MatrixXd::Identity(nb_inputs,nb_outputs);
-    C_native = Eigen::MatrixXd::Identity(nb_outputs,nb_inputs);
 
-    R = Eigen::MatrixXd::Zero(nb_inputs,nb_inputs);
+    A = Eigen::MatrixXd::Identity(_nbr_inputs,_nbr_outputs);
+    S = Eigen::MatrixXd::Identity(_nbr_inputs,_nbr_inputs);
+    C = Eigen::MatrixXd::Identity(_nbr_outputs,_nbr_inputs);
+    b = Eigen::MatrixXd::Zero(_nbr_inputs,1);
+    h = Eigen::MatrixXd::Zero(_nbr_outputs,1);
+    L = Eigen::MatrixXd::Zero(_nbr_inputs,_nbr_inputs);
+    v_avg = Eigen::MatrixXd::Zero(_nbr_inputs,1);
+    A_native = Eigen::MatrixXd::Identity(_nbr_inputs,_nbr_outputs);
+    C_native = Eigen::MatrixXd::Identity(_nbr_outputs,_nbr_inputs);
+
+    R = Eigen::MatrixXd::Zero(_nbr_inputs,_nbr_inputs);
 
     C*=_conf.initFeedbackStrength;
     S*=0.05f;
     C_native*=1.2f;
 
-    y_teaching = Eigen::MatrixXd::Zero(nb_outputs,1);
-    x = Eigen::MatrixXd::Zero(nb_inputs,1);
-    x_smooth = Eigen::MatrixXd::Zero(nb_inputs,1);
+    y_teaching = Eigen::MatrixXd::Zero(_nbr_outputs,1);
+    x = Eigen::MatrixXd::Zero(_nbr_inputs,1);
+    x_smooth = Eigen::MatrixXd::Zero(_nbr_inputs,1);
     x_buffer.resize(_conf.buffersize);
     y_buffer.resize(_conf.buffersize);
     for (size_t k = 0; k < _conf.buffersize; k++) {
-        x_buffer[k] = Eigen::MatrixXd::Zero(nb_inputs,1);
-        y_buffer[k] = Eigen::MatrixXd::Zero(nb_outputs,1);
+        x_buffer[k] = Eigen::MatrixXd::Zero(_nbr_inputs,1);
+        y_buffer[k] = Eigen::MatrixXd::Zero(_nbr_outputs,1);
     }
 
 }

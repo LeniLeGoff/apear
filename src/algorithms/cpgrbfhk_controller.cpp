@@ -9,7 +9,11 @@ void CPGRBFHK::init(int nb_outputs){
     init();
 }
 void CPGRBFHK::init(){
-    _nn.init_cpg(1.01,0.03);
+
+    double alpha = settings::getParameter<settings::Double>(_parameters,"#CPGAlpha").value;
+    double phi = settings::getParameter<settings::Double>(_parameters,"#CPGFreq").value;
+
+    _nn.init_cpg(alpha,phi);
     _nn.init_rbf();
 
     _conf.epsA = settings::getParameter<settings::Double>(_parameters,"#epsilonA").value;

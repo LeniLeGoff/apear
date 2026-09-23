@@ -45,9 +45,10 @@ public:
     Homeokinesis(): Control(){
         _set_default_config();
     }
-    Homeokinesis(int nb_inputs, int nb_outputs): Control(){
+    Homeokinesis(int nb_inputs, int nb_outputs): Control(),
+        _nbr_inputs(nb_inputs),_nbr_outputs(nb_outputs)
+    {
         _set_default_config();
-        init(nb_inputs,nb_outputs);
     }
     Homeokinesis(const Homeokinesis& ctrl):
         Control(ctrl),
@@ -81,8 +82,9 @@ public:
         x_smooth = ctrl.x_smooth;
     }
 
-    void init(int nb_inputs, int nb_outputs);
 
+    void init(int nb_inputs, int nb_outputs);
+    void init();
     Control::Ptr clone() const override{
         return std::make_shared<Homeokinesis>(*this);
     }
