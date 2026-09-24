@@ -25,19 +25,17 @@ int main(int argc, char** argv){
         biases[i] = uniform(gen);
 
 
-    CPGRBFNetwork cpgrbf(1,40,1,1);
+    CPGRBFNetwork cpgrbf(40,1,1);
     cpgrbf.init_cpg(1.01,0.03);
     cpgrbf.init_rbf();
     cpgrbf.set_out_layer_parameters(weights,biases);
 
     torch::Tensor x = torch::zeros(1);
     for(int i = 0; i < 1000; i++){
-        x = cpgrbf.forward(x);
+        x = cpgrbf.forward();
         std::cout << cpgrbf.get_cpg()->neuron_states().data_ptr<double>()[0] << ","
                   << cpgrbf.get_cpg()->neuron_states().data_ptr<double>()[1] << ",";
 
-        if(i < 500)
-            x = x + normal(gen);
         std::cout << x.data_ptr<double>()[0] << "," << std::endl;
                 // << x.data_ptr<double>()[1] << ","
                 // << x.data_ptr<double>()[2] << ","

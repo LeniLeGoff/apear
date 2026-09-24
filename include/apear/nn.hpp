@@ -168,10 +168,10 @@ struct CPGRBFNetwork: torch::nn::Module{
      * @param init_state_0 of the CPGCell with default values to get a stable sine wave
      * @param init_state_1 of the CPGCell with default values to get a stable sine wave
      */
-    CPGRBFNetwork(int nbr_inputs, int nbr_hidden,int nbr_outputs, double init_state = 0.2);
-    torch::Tensor forward(torch::Tensor inputs);
+    CPGRBFNetwork(int nbr_hidden,int nbr_outputs, double init_state = 0.2);
+    torch::Tensor forward();
     torch::Tensor cpgrbf_forward();
-    torch::Tensor out_forward(torch::Tensor&,const torch::Tensor&);
+    torch::Tensor out_forward(torch::Tensor&);
 
 
     /**
@@ -194,7 +194,6 @@ struct CPGRBFNetwork: torch::nn::Module{
     // void get_out_layer_parameters(std::vector<double> &weights, std::vector<double> &biases);
     const CPGCell &get_cpg(){return _cpg;}
 
-    int _nbr_inputs;
     int _nbr_outputs;
     int _nbr_hidden;
 private:
@@ -297,8 +296,8 @@ class CPGRBFControl: public Control{
 public:
     CPGRBFControl() : Control(){}
     CPGRBFControl(int nbr_outputs, int nbr_rbf,
-                  double init_state_0 = 0.2, double init_state_1 = -0.2,double alpha = 1.05, double phi = 0.1) : Control(){
-        init_nn(nbr_outputs,nbr_rbf,init_state_0,init_state_1,alpha,phi);
+                  double init_state = 0.2,double alpha = 1.05, double phi = 0.1) : Control(){
+        init_nn(nbr_outputs,nbr_rbf,init_state,alpha,phi);
     }
     Control::Ptr clone() const override{
         return std::make_shared<CPGRBFControl>(*this);
@@ -307,7 +306,7 @@ public:
     std::vector<double> update(const std::vector<double> &inputs) override;
 
     void init_nn(int nbr_outputs, int nbr_rbf,
-                 double init_state_0 = 0.2, double init_state_1 = -0.2, double alpha = 1.05, double phi = 0.1);
+                 double init_state = 0.2, double alpha = 1.05, double phi = 0.1);
     static void nbr_parameters(int nbr_outputs,int nbr_rbf,int &nbr_weights, int &nbr_biases);
     void set_randomNum(const misc::RandNum::Ptr& rn){_rand_num = rn;}
 

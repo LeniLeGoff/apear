@@ -83,11 +83,7 @@ std::vector<double> CPGRBFHK::update(const std::vector<double> &sensorValues){
 
     x_buffer[t%_conf.buffersize] = x_smooth; // we store the smoothed sensor value
 
-    // x_tensor = x_tensor + std::sqrt(0.1)*torch::randn({40});
-    std::vector<double> sensor_vals = sensorValues;
-    torch::Tensor inputs = torch::from_blob(sensor_vals.data(),{static_cast<long>(sensorValues.size())},
-                                            torch::TensorOptions().dtype(torch::kDouble));
-    torch::Tensor out = _nn.out_forward(x_tensor,inputs);
+    torch::Tensor out = _nn.out_forward(x_tensor);
 
     Matrix y = Eigen::Map<Matrix>(static_cast<double*>(out.data_ptr()),out.size(0),1);
 
@@ -122,7 +118,7 @@ void CPGRBFHK::learn(){
 
     const Matrix& z       = (C * (x) + h); // here no creativity
     //const Matrix& y       = z.array().tanh();
-    torch::Tensor out = _nn.forward(torch::empty(1));
+    torch::Tensor out = _nn.forward();
     const Matrix& y = Eigen::Map<Matrix>(static_cast<double*>(out.data_ptr()),out.size(0),1);
     Matrix g_prime = z;
     _tanh_diff(g_prime);

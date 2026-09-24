@@ -289,8 +289,8 @@ void RBFNetwork::set_weights_biases(const torch::Tensor& weights, const torch::T
     _out->bias = biases.clone();
 }
 
-CPGRBFNetwork::CPGRBFNetwork(int nbr_inputs, int nbr_hidden, int nbr_outputs,  double init_state)
-    : _nbr_inputs(nbr_inputs), _nbr_outputs(nbr_outputs), _nbr_hidden(nbr_hidden),
+CPGRBFNetwork::CPGRBFNetwork(int nbr_hidden, int nbr_outputs,  double init_state)
+    : _nbr_outputs(nbr_outputs), _nbr_hidden(nbr_hidden),
     _cpg(init_state,-init_state), _in(2,2),
     _rbf(2,nbr_hidden), _out(nbr_hidden, _nbr_outputs), _init_state(init_state)
 {
@@ -309,13 +309,9 @@ CPGRBFNetwork::CPGRBFNetwork(int nbr_inputs, int nbr_hidden, int nbr_outputs,  d
     _rbf->to(torch::kDouble);
 }
 
-torch::Tensor CPGRBFNetwork::forward(torch::Tensor inputs){
-    // x = torch::cat({inputs,x},0);
-    // x = _in->forward(x);
-    // x = torch::tanh(x);
+torch::Tensor CPGRBFNetwork::forward(){
     torch::Tensor x = cpgrbf_forward();
-    return out_forward(x,inputs);
-    return x;
+    return out_forward(x);
 }
 
 torch::Tensor CPGRBFNetwork::cpgrbf_forward(){
@@ -324,11 +320,8 @@ torch::Tensor CPGRBFNetwork::cpgrbf_forward(){
     return x;
 }
 
-torch::Tensor CPGRBFNetwork::out_forward(torch::Tensor &x,const torch::Tensor &inputs){
-    x = torch::tanh(_out->forward(x));
-    // torch::Tensor diff = torch::abs(torch::sub(x,inputs));
-    // x = torch::mul(x,diff);
-    return x;
+torch::Tensor CPGRBFNetwork::out_forward(torch::Tensor &x){
+    return torch::tanh(_out->forward(x));
 }
 
 void CPGRBFNetwork::init_cpg(double alpha, double phi){
@@ -517,15 +510,15 @@ void RNNControl::nbr_parameters(int nbr_inputs, int nbr_outputs, int nbr_hidden,
 }
 
 std::vector<double> CPGRBFControl::update(const std::vector<double> &inputs){
-    std::vector<double> cpy = inputs;
-    torch::Tensor t_in = torch::from_blob(cpy.data(),{static_cast<int64_t>(inputs.size())},torch::TensorOptions().dtype(torch::kDouble));
-    torch::Tensor t_out = _nn->forward(t_in);
+    // std::vector<double> cpy = inputs;
+    // torch::Tensor t_in = torch::from_blob(cpy.data(),{static_cast<int64_t>(inputs.size())},torch::TensorOptions().dtype(torch::kDouble));
+    torch::Tensor t_out = _nn->forward();
     std::vector<double> outputs(t_out.data_ptr<double>(),t_out.data_ptr<double>() + t_out.numel());
     return outputs;
 }
 
-void CPGRBFControl::init_nn(int nbr_outputs, int nbr_rbf, double init_state_0, double init_state_1, double alpha, double phi){
-    _nn = std::make_shared<CPGRBFNetwork>(nbr_rbf, nbr_outputs, init_state_0, init_state_1);
+void CPGRBFControl::init_nn(int nbr_outputs, int nbr_rbf, double init_state, double alpha, double phi){
+    _nn = std::make_shared<CPGRBFNetwork>(nbr_rbf, nbr_outputs, init_state);
     _nn->init_cpg(alpha,phi);
     _nn->init_rbf();
 }
