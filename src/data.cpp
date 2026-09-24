@@ -9,10 +9,10 @@ std::string act_obs_t::to_string() const{
     sstr << time << ";";
     sstr << observation[0];
     for(size_t i = 1; i < observation.size(); i++)
-        sstr << "," << observation[i];
+        sstr << "," << (observation[i] > 0.000001 ? observation[i] : 0.0);
     sstr << ";" << action[0];
     for(size_t i = 1; i < action.size(); i++)
-        sstr << "," << action[i];
+        sstr << "," << (action[i] > 0.000001 ? action[i] : 0.0);
     //TODO add return value to the string
     return sstr.str();
 }
