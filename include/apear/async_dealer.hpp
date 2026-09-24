@@ -41,6 +41,7 @@ public:
             _simulators.push_back(sim_t(_parameters, _rand_num, headless));
         }
         _ind_vec.resize(nbr_sim);
+
         return true;
     }
     bool update_simulators(){
@@ -49,7 +50,10 @@ public:
         if(!_ea->eval_queue().empty())
             individuals_distribution();
 
+        tbb::global_control global(tbb::global_control::max_allowed_parallelism, _simulators.size()+1);
+        arena.initialize(_simulators.size());
         //Update simulators
+        arena.execute([&]{
         tbb::parallel_for(tbb::blocked_range<size_t>(0,_simulators.size()),
                           [&](tbb::blocked_range<size_t> r){
                               for(size_t sim_idx = r.begin(); sim_idx != r.end(); ++sim_idx)
@@ -96,7 +100,7 @@ public:
                 _ea->evaluated().push_back(std::move(ind));
             }
         }//for each simulators
-        });//tbb::parallel
+        });});//tbb::parallel
         if(!_ea->evaluated().empty())
             save_logs();
         _ea->update();
@@ -190,6 +194,8 @@ private:
 
     bool _is_all_simulators_finished();
     const int _max_connection_trials = 3;
+
+    tbb::task_arena arena;
 };
 
 }//apear
