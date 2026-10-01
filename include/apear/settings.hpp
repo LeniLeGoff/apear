@@ -351,6 +351,7 @@ T getParameter(const ParametersMap &params,const std::string& name)
 
 }
 
+void setParameter(ParametersMapPtr &params,const std::string& name, const Type::ConstPtr &value);
 
 std::string toString(const ParametersMap& params);
 ParametersMap fromString(const std::string& str_params);

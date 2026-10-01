@@ -77,7 +77,18 @@ settings::ParametersMap settings::loadParameters(const std::string& file)
     return parameters;
 }
 
-
+void settings::setParameter(ParametersMapPtr &params,const std::string& name, const Type::ConstPtr &value){
+    if(params == nullptr){
+        std::cerr << "are::settings::setParameter error: params is empty - queried parameter: " << name << std::endl;
+        return;
+    }
+    if(value == nullptr){
+        std::cerr << "are::settings::setParameter error: value is empty - queried parameter: " << name << std::endl;
+        return;
+    }
+    params->erase(name);
+    params->emplace(name,value);
+}
 
 std::string settings::toString(const std::string &name, const settings::Type::ConstPtr& elt){
     std::stringstream sstr;
