@@ -78,6 +78,7 @@ public:
                     sim.stop();
                 }else{
                     register_data(ind,sim);
+                    sleep(settings::getParameter<settings::Double>(_parameters,"#simTimeStep").value);
                     if(sim.step()){
                         // if(verbose)
                         // std::cout << "simulation " << sim_idx <<  " running" << std::endl;

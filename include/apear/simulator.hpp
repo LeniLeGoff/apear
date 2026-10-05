@@ -46,7 +46,7 @@ public:
      */
     virtual bool step() = 0;
 
-    virtual bool update_robot(const IndPtr &ind){return true;}
+    virtual bool update_robot(const IndPtr &ind, bool normalized = true){return true;}
 
     /**
      * @brief stop the simulation
