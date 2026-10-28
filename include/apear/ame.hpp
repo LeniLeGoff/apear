@@ -28,6 +28,7 @@ public:
         for(IndPtr& ind: this->_eval_queue){
             ind = std::make_shared<ind_t>(this->_rand_num,this->_parameters);
             ind->init();
+            ind->random();
             ind->set_id(this->_highest_id++);
         }
     }
