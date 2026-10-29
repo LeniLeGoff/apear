@@ -269,6 +269,7 @@ Type::Ptr buildType(const std::string &name);
 
 std::string toString(const std::string &name, const Type::ConstPtr &element);
 
+
 template<typename T>
 std::shared_ptr<const T> cast(const Type::ConstPtr val)
 {
@@ -352,6 +353,7 @@ T getParameter(const ParametersMap &params,const std::string& name)
 }
 
 void setParameter(ParametersMapPtr &params,const std::string& name, const Type::ConstPtr &value);
+
 
 std::string toString(const ParametersMap& params);
 ParametersMap fromString(const std::string& str_params);

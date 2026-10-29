@@ -36,8 +36,16 @@ public:
     bool update() override{
         int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
         for(IndPtr& ind: this->_evaluated){
-            _nbr_eval++;
-            _parent_pool.push_back(std::move(ind));
+            if(ind->get_objectives()[0] == 0){
+                ind = std::make_shared<ind_t>(this->_rand_num,this->_parameters);
+                ind->init();
+                ind->random();
+                ind->set_id(this->_highest_id++);
+                this->_eval_queue.push_back(ind);
+            }else{
+                _nbr_eval++;
+                _parent_pool.push_back(ind);
+            }
             if(_parent_pool.size() > pop_size)
                 _remove_worst_parent();
         }

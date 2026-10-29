@@ -40,8 +40,16 @@ public:
 
     bool update() override{
         for(IndPtr& ind: this->_evaluated){
-            _nbr_eval++;
-            _parent_pool.add_solution(std::move(ind));
+            if(ind->get_objectives()[0] == 0){
+                ind = std::make_shared<ind_t>(this->_rand_num,this->_parameters);
+                ind->init();
+                ind->random();
+                ind->set_id(this->_highest_id++);
+                this->_eval_queue.push_back(ind);
+            }else{
+                _nbr_eval++;
+                _parent_pool.add_solution(ind);
+            }
         }
         this->evaluated().clear();
 
@@ -61,10 +69,12 @@ private:
     int _nbr_eval = 0;
 
     void _reproduction(){
+        if(_parent_pool.size() == 0)
+            return;
         int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
 
         while(this->_eval_queue.size() < pop_size){
-            IndPtr parent = _parent_pool.random_solution(this->_rand_num);
+            IndPtr parent = _parent_pool.select_solution(this->_rand_num);
             GenPtr new_gene = std::dynamic_pointer_cast<morph_gen_t>(parent->get_morph_genome()->clone());
             new_gene->set_id(this->_highest_id++);
             new_gene->mutate();

@@ -5,6 +5,7 @@
 #include <vector>
 #include <oneapi/tbb.h>
 #include "apear/misc/rand_num.hpp"
+#include "apear/algorithms/selectors.hpp"
 
 namespace apear{
 
@@ -18,8 +19,8 @@ public:
     using comparator_t = std::function<bool(const T&, const T&)> ;
 
     Archive(){}
-    Archive(comparator_t comparator) :
-        _comparator(comparator){}
+    Archive(comparator_t comparator, typename selectors::selector_t<T> selector ) :
+        _comparator(comparator), _selector(selector){}
 
     virtual void reset(){
         _solutions.clear();
@@ -28,6 +29,11 @@ public:
     virtual bool add_solution(const T& solution){
         _solutions.push_back(solution);
     }
+
+    const T& select_solution(const misc::RandNum::Ptr &rand_num){
+        return _selector(_solutions,rand_num);
+    }
+
     const T& random_solution(const misc::RandNum::Ptr &rand_num) const{
         if (_solutions.empty()) {
             throw std::runtime_error("No solutions in archive");
@@ -46,6 +52,7 @@ public:
 protected:
     comparator_t _comparator; //return true if the first argument as higher quality than the second
     std::vector<T> _solutions;
+    typename selectors::selector_t<T> _selector;
 };
 
 /**
@@ -60,22 +67,25 @@ public:
     using distance_fct_t = std::function<D(const T&, const T&)>;
 
     UnstructuredArchive(): Archive<T>(){}
-    UnstructuredArchive(D threshold, distance_fct_t dist_fct, comparator_t comparator)
-        : Archive<T>(comparator), _threshold(threshold), _distance_fct(dist_fct){}
+    UnstructuredArchive(D threshold, distance_fct_t dist_fct, comparator_t comparator,
+                        typename selectors::selector_t<T> selector)
+        : Archive<T>(comparator,selector), _threshold(threshold), _distance_fct(dist_fct){}
 
     bool add_solution(const T& solution) override{
+        if(this->_solutions.empty()){
+            this->_solutions.push_back(solution);
+            return true;
+        }
         std::vector<D> distances(this->_solutions.size());
         // Comparing with archive
-        tbb::parallel_for(tbb::blocked_range<size_t>(0,this->_solutions.size()),
-                          [&](tbb::blocked_range<size_t> r){
-                              for(size_t i = r.begin(); i != r.end(); i++){
-                                  distances[i] = _distance_fct(this->_solutions[i],solution);
-                              }
-                          });
+        for(size_t i = 0; i != this->_solutions.size(); i++){
+            distances[i] = _distance_fct(this->_solutions[i],solution);
+        }
+
         std::vector<size_t> indices(distances.size());
         std::iota(indices.begin(),indices.end(),0);
         std::sort(indices.begin(),indices.end(),[&](size_t i,size_t j){return distances[i] < distances[j];}); // Sorting distances
-        if(distances[indices[0]] > _threshold){ //if the closest solution in archive is farther than _threshold
+        if(distances[indices[0]] >= _threshold){ //if the closest solution in archive is farther than _threshold
             this->_solutions.push_back(solution); //then add the new solution
             return true;
         }
@@ -104,8 +114,9 @@ public:
     using comparator_t = typename Archive<T>::comparator_t;
 
     GridArchive(): Archive<T>(){}
-    GridArchive(const std::vector<int>& bins, const std::vector<std::tuple<double,double>>& boundaries,comparator_t comparator)
-        : Archive<T>(comparator), _bins(bins), _boundaries(boundaries) {
+    GridArchive(const std::vector<int>& bins, const std::vector<std::tuple<double,double>>& boundaries,
+                comparator_t comparator, typename selectors::selector_t<T> selector)
+        : Archive<T>(comparator,selector), _bins(bins), _boundaries(boundaries) {
         _dimensions = bins.size();
     }
     void reset() override {
@@ -161,8 +172,9 @@ public:
     using comparator_t = typename Archive<T>::comparator_t;
 
     InfinteGridArchive(): Archive<T>(){}
-    InfinteGridArchive(const std::vector<double>& intervals,comparator_t comparator)
-        : Archive<T>(comparator), _intervals(intervals){
+    InfinteGridArchive(const std::vector<double>& intervals,comparator_t comparator,
+                       typename selectors::selector_t<T> selector)
+        : Archive<T>(comparator,selector), _intervals(intervals){
         _dimensions = intervals.size();
     }
     void reset() override {
