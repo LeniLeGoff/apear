@@ -5,10 +5,19 @@
 #include <vector>
 #include <oneapi/tbb.h>
 #include "apear/misc/rand_num.hpp"
-#include "apear/algorithms/selectors.hpp"
 
 namespace apear{
 
+struct selectors{
+    template<typename solution_t>
+    using selector_t = std::function<const solution_t &(const std::vector<solution_t>&, const misc::RandNum::Ptr &)>;
+
+    template<typename solution_t>
+    static inline selector_t<solution_t> random = [](const std::vector<solution_t>& solutions,const misc::RandNum::Ptr & rand_num) -> const solution_t &{
+        int index = rand_num->rand_int(0, static_cast<int>(solutions.size()) - 1);
+        return solutions.at(index);
+    };
+};
 /**
  * @brief Base class for Quality-Diversity archives
  * Implement a basic archive storing the solution in a vector with the most recent solution pushed back.
@@ -53,6 +62,7 @@ protected:
     comparator_t _comparator; //return true if the first argument as higher quality than the second
     std::vector<T> _solutions;
     typename selectors::selector_t<T> _selector;
+
 };
 
 /**
@@ -98,10 +108,30 @@ public:
         return false; //new solution not added
     }
     void set_threshold(const D& thres){_threshold = thres;}
-
+    void compute_sparsity_scores(){
+        std::vector<double> sparsity_scores;
+        std::vector<D> distances;
+        for(const T &ind1: this->_solutions){
+            for(const T &ind2: this->_solutions){
+                if(ind1->get_morph_genome()->id() == ind2->get_morph_genome()->id())
+                    continue;
+                distances.push_back(_distance_fct(ind1,ind2));
+                std::sort(distances.begin(),distances.end());
+                double sparsity_score = 0;
+                size_t nbr_ngb = std::min(static_cast<size_t>(15),distances.size());
+                for(size_t i = 0; i < nbr_ngb; i++){
+                    sparsity_score += static_cast<double>(distances[i]);
+                }
+                _sparsity_scores.push_back(sparsity_score/static_cast<double>(nbr_ngb));
+            }
+        }
+    }
+    const std::vector<double>& get_sparsity_scores(){return _sparsity_scores;}
 private:
     D _threshold;
     distance_fct_t _distance_fct;
+    int _nearest_neighbors; //number nearest neighbors for sparsity computation
+    std::vector<double> _sparsity_scores;
 };
 
 /**
@@ -218,6 +248,7 @@ private:
     std::vector<double> _intervals; // intervals used to discretize each dimension
     std::map<std::vector<int>,int> _indices; // Matrix of indices organised as a multi-dimensional grid
 };
+
 
 
 
