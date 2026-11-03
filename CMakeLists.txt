@@ -8,7 +8,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
+find_package(Eigen3 REQUIRED)
 
 file(GLOB_RECURSE SOURCES "${PROJECT_SOURCE_DIR}/src/*.cpp")
 # message(${SOURCES})
@@ -18,9 +18,9 @@ add_library(apear SHARED ${SOURCES})
 target_include_directories(apear PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-    "/usr/include/eigen3"
+    # "/usr/include/eigen3"
 )
-target_link_libraries(apear tbb  "${TORCH_LIBRARIES}") #Boost::serialization Boost::filesystem)
+target_link_libraries(apear Eigen3::Eigen tbb  "${TORCH_LIBRARIES}") #Boost::serialization Boost::filesystem)
 target_compile_options(apear PRIVATE -Wall -Werror)
 
 
