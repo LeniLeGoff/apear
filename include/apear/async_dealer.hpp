@@ -3,7 +3,7 @@
 #include <vector>
 #include <memory>
 #include <tbb/tbb.h>
-
+#include <thread>
 #include "apear/misc/rand_num.hpp"
 #include "apear/settings.hpp"
 #include "apear/ea.hpp"
@@ -11,6 +11,7 @@
 
 #include "apear/simulator.hpp"
 #include "apear/environment.hpp"
+
 
 namespace apear{
 
@@ -44,11 +45,52 @@ public:
 
         return true;
     }
-    bool update_simulators(){
+    void run(){
+        do{
+            update_simulators();
+        }while(update_ea());
+    }
+    void run_threaded_updates(){
+        _ea_update_thread = std::thread([&]{
+            while(update_ea());
+            _run_finished = true;
+        });
+        _ea_update_thread.detach();
+        while(!_run_finished)
+            update_simulators();
+    }
+    void individuals_distribution(){
+        for(int i = 0; i < _ind_vec.size(); i++){
+            if(_eval_queue.empty() || _ind_vec[i] != nullptr)
+                continue;
+            int eval_order = settings::getParameter<settings::Integer>(_parameters,"#evaluationOrder").value;
+            if(eval_order == EvalOrder::FILO){
+                //First in Last out
+                _ind_vec[i] = std::move(_eval_queue.back());
+                _eval_queue.erase(_eval_queue.begin()+_eval_queue.size()-1);
+            }
+            else if(eval_order == EvalOrder::FIFO){
+                //First in First out
+                _ind_vec[i] = std::move(_eval_queue.front());
+                _eval_queue.erase(_eval_queue.begin());
+            }
+        }
+    }
+
+    void update_simulators(){
         bool verbose = settings::getParameter<settings::Boolean>(_parameters,"#verbose").value;
         // float sim_duration = settings::getParameter<settings::Float>(_parameters,"#maxEvalTime").value;
-        if(!_ea->eval_queue().empty())
+        {//thread safe access to _eval_queue vector
+            std::lock_guard<std::mutex> lock(_mutex);
+            _eval_queue = _ea->eval_queue();
+        }
+        if(!_eval_queue.empty()){
             individuals_distribution();
+        }
+        {//thread safe access to _eval_queue vector
+            std::lock_guard<std::mutex> lock(_mutex);
+            _ea->eval_queue() = _eval_queue;
+        }
 
         tbb::global_control global(tbb::global_control::max_allowed_parallelism, _simulators.size()+1);
         arena.initialize(_simulators.size());
@@ -98,10 +140,19 @@ public:
                               << " as fitness " << ind->get_objectives()[0] << std::endl;
                 assert(ind != nullptr);
                 std::lock_guard<std::mutex> lock(_mutex);
-                _ea->evaluated().push_back(std::move(ind));
+                _evaluated.push_back(std::move(ind));
             }
         }//for each simulators
         });});//tbb::parallel
+    }
+    bool update_ea(){
+        bool verbose = settings::getParameter<settings::Boolean>(_parameters,"#verbose").value;
+
+        {//thread safe access to _evaluated vector
+            std::lock_guard<std::mutex> lock(_mutex);
+            _ea->evaluated() = _evaluated;
+            _evaluated.clear();
+        }
         if(!_ea->evaluated().empty())
             save_logs();
         _ea->update();
@@ -116,23 +167,7 @@ public:
         }
         return true;
     }
-    void individuals_distribution(){
-        for(int i = 0; i < _ind_vec.size(); i++){
-            if(_ea->eval_queue().empty() || _ind_vec[i] != nullptr)
-                continue;
-            int eval_order = settings::getParameter<settings::Integer>(_parameters,"#evaluationOrder").value;
-            if(eval_order == EvalOrder::FILO){
-                //First in Last out
-                _ind_vec[i] = std::move(_ea->eval_queue().back());
-                _ea->eval_queue().erase(_ea->eval_queue().begin()+_ea->eval_queue().size()-1);
-            }
-            else if(eval_order == EvalOrder::FIFO){
-                //First in First out
-                _ind_vec[i] = std::move(_ea->eval_queue().front());
-                _ea->eval_queue().erase(_ea->eval_queue().begin());
-            }
-        }
-    }
+
 
     const settings::ParametersMapPtr &get_parameters(){return _parameters;}
     void set_parameters(const settings::ParametersMapPtr &param){_parameters = param;}
@@ -149,7 +184,11 @@ public:
             _environments.push_back(std::make_shared<env_t>(args...));
     }
 
-    void set_ea(EAPtr &ea){ea.swap(_ea);}
+    void set_ea(EAPtr &ea){
+        ea.swap(_ea);
+        _ea->init();
+        _eval_queue = _ea->eval_queue();
+    }
 
     void save_logs(){
         for(const auto &log : _logging_fcts){
@@ -177,11 +216,13 @@ private:
 
     std::vector<typename Logging<ind_t,sim_t>::Ptr> _logging_fcts;
     int _population_size;
-
+    bool _run_finished = false;
     std::vector<EnvPtr> _environments;
     std::vector<sim_t> _simulators;
     int _nbr_of_instances = 1;
     std::vector<IndPtr> _ind_vec;
+    std::vector<IndPtr> _evaluated;
+    std::vector<IndPtr> _eval_queue;
 
 
     hr_clock::time_point _reference_time;
@@ -197,6 +238,8 @@ private:
     const int _max_connection_trials = 3;
 
     tbb::task_arena arena;
+    std::thread _simulators_thread;
+    std::thread _ea_update_thread;
 };
 
 }//apear

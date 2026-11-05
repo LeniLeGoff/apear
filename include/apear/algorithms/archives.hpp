@@ -10,12 +10,14 @@ namespace apear{
 
 struct selectors{
     template<typename solution_t>
-    using selector_t = std::function<const solution_t &(const std::vector<solution_t>&, const misc::RandNum::Ptr &)>;
+    using selector_t = std::function<void(const std::vector<solution_t>&, const misc::RandNum::Ptr &,std::vector<solution_t>&)>;
 
     template<typename solution_t>
-    static inline selector_t<solution_t> random = [](const std::vector<solution_t>& solutions,const misc::RandNum::Ptr & rand_num) -> const solution_t &{
-        int index = rand_num->rand_int(0, static_cast<int>(solutions.size()) - 1);
-        return solutions.at(index);
+    static inline selector_t<solution_t> random = [](const std::vector<solution_t>& solutions,const misc::RandNum::Ptr & rand_num, std::vector<solution_t> &selection){
+        for(size_t i = 0; i < selection.size(); i++){
+            int index = rand_num->rand_int(0, static_cast<int>(solutions.size()) - 1);
+            selection[i] = solutions.at(index);
+        }
     };
 };
 /**
@@ -39,10 +41,16 @@ public:
         _solutions.push_back(solution);
     }
 
-    const T& select_solution(const misc::RandNum::Ptr &rand_num){
-        return _selector(_solutions,rand_num);
+    void select_solution(const misc::RandNum::Ptr &rand_num, T& selection){
+        std::vector<T> select(1);
+        _selector(1,_solutions,rand_num,selection);
+        selection = select[0];
     }
-
+    std::vector<T> select_solutions(int N, const misc::RandNum::Ptr &rand_num, std::vector<T>& selection){
+        selection.resize(N);
+        _selector(_solutions,rand_num,selection);
+        return selection;
+    }
     const T& random_solution(const misc::RandNum::Ptr &rand_num) const{
         if (_solutions.empty()) {
             throw std::runtime_error("No solutions in archive");
@@ -57,7 +65,7 @@ public:
         return _solutions.size();
     }
 
-
+    virtual void update(){}
 protected:
     comparator_t _comparator; //return true if the first argument as higher quality than the second
     std::vector<T> _solutions;
@@ -78,8 +86,8 @@ public:
 
     UnstructuredArchive(): Archive<T>(){}
     UnstructuredArchive(D threshold, distance_fct_t dist_fct, comparator_t comparator,
-                        typename selectors::selector_t<T> selector)
-        : Archive<T>(comparator,selector), _threshold(threshold), _distance_fct(dist_fct){}
+                        typename selectors::selector_t<T> selector, int nbr_ngb = 0)
+        : Archive<T>(comparator,selector), _threshold(threshold), _distance_fct(dist_fct),_sparsity_number_neighbors(nbr_ngb){}
 
     bool add_solution(const T& solution) override{
         if(this->_solutions.empty()){
@@ -107,31 +115,37 @@ public:
         }
         return false; //new solution not added
     }
+    void update() override{
+        if(_sparsity_number_neighbors > 0)
+            compute_sparsity_scores(_sparsity_number_neighbors);
+    }
     void set_threshold(const D& thres){_threshold = thres;}
-    void compute_sparsity_scores(){
-        std::vector<double> sparsity_scores;
+    void set_sparsity_number_neighbors(int nbr_ngb){_sparsity_number_neighbors = nbr_ngb;}
+    void compute_sparsity_scores(int nbr_ngb){
         std::vector<D> distances;
         for(const T &ind1: this->_solutions){
             for(const T &ind2: this->_solutions){
                 if(ind1->get_morph_genome()->id() == ind2->get_morph_genome()->id())
                     continue;
                 distances.push_back(_distance_fct(ind1,ind2));
-                std::sort(distances.begin(),distances.end());
-                double sparsity_score = 0;
-                size_t nbr_ngb = std::min(static_cast<size_t>(15),distances.size());
-                for(size_t i = 0; i < nbr_ngb; i++){
-                    sparsity_score += static_cast<double>(distances[i]);
-                }
-                _sparsity_scores.push_back(sparsity_score/static_cast<double>(nbr_ngb));
             }
+            std::sort(distances.begin(),distances.end());
+            double sparsity_score = 0;
+            size_t nbr_ngb_ = std::min(static_cast<size_t>(nbr_ngb),distances.size());
+            for(size_t i = 0; i < nbr_ngb_; i++){
+                sparsity_score += static_cast<double>(distances[i]);
+            }
+            ind1->set_sparsity_score(sparsity_score/static_cast<double>(nbr_ngb_));
+            distances.clear();
         }
     }
-    const std::vector<double>& get_sparsity_scores(){return _sparsity_scores;}
+    // const std::vector<double>& get_sparsity_scores(){return _sparsity_scores;}
 private:
     D _threshold;
     distance_fct_t _distance_fct;
     int _nearest_neighbors; //number nearest neighbors for sparsity computation
-    std::vector<double> _sparsity_scores;
+    // std::vector<double> _sparsity_scores;
+    int _sparsity_number_neighbors = 0;
 };
 
 /**
