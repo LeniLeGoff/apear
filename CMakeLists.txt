@@ -67,5 +67,4 @@ install(
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/apear"
   )
 
-
 add_subdirectory(tests)

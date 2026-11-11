@@ -8,6 +8,7 @@
 
 namespace apear{
 
+
 struct selectors{
     template<typename solution_t>
     using selector_t = std::function<void(const std::vector<solution_t>&, const misc::RandNum::Ptr &,std::vector<solution_t>&)>;
@@ -43,7 +44,7 @@ public:
 
     void select_solution(const misc::RandNum::Ptr &rand_num, T& selection){
         std::vector<T> select(1);
-        _selector(1,_solutions,rand_num,selection);
+        _selector(_solutions,rand_num,selection);
         selection = select[0];
     }
     std::vector<T> select_solutions(int N, const misc::RandNum::Ptr &rand_num, std::vector<T>& selection){
@@ -115,6 +116,11 @@ public:
         }
         return false; //new solution not added
     }
+
+    void push_back(const T& solution){
+        this->_solutions.push_back(solution);
+    }
+
     void update() override{
         if(_sparsity_number_neighbors > 0)
             compute_sparsity_scores(_sparsity_number_neighbors);
@@ -125,7 +131,7 @@ public:
         std::vector<D> distances;
         for(const T &ind1: this->_solutions){
             for(const T &ind2: this->_solutions){
-                if(ind1->get_morph_genome()->id() == ind2->get_morph_genome()->id())
+                if(ind1->id() == ind2->id())
                     continue;
                 distances.push_back(_distance_fct(ind1,ind2));
             }
@@ -147,6 +153,8 @@ private:
     // std::vector<double> _sparsity_scores;
     int _sparsity_number_neighbors = 0;
 };
+
+
 
 /**
 * @brief Grid archive to store solutions from MAP-Elites and similar algorithms.
