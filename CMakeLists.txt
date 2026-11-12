@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(apear)
 
 include(GNUInstallDirs)
+add_compile_options("$<$<CONFIG:RELEASE>:-O3>$<$<CONFIG:DEBUG>:-O0>")
 
 find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
