@@ -106,12 +106,16 @@ public:
         std::sort(indices.begin(),indices.end(),[&](size_t i,size_t j){return distances[i] < distances[j];}); // Sorting distances
         if(distances[indices[0]] >= _threshold){ //if the closest solution in archive is farther than _threshold
             this->_solutions.push_back(solution); //then add the new solution
+            if(_sparsity_number_neighbors > 0)
+                _compute_sparsity_score(solution);
             return true;
         }
         //else compare their quality
         T& stored_sol = this->_solutions[indices[0]];
         if(this->_comparator(solution,stored_sol)){//replace current stored solution with the new one if it has better quality.
             stored_sol = solution;
+            if(_sparsity_number_neighbors > 0)
+                _compute_sparsity_score(solution);
             return true;
         }
         return false; //new solution not added
@@ -122,8 +126,6 @@ public:
     }
 
     void update() override{
-        if(_sparsity_number_neighbors > 0)
-            compute_sparsity_scores(_sparsity_number_neighbors);
     }
     void set_threshold(const D& thres){_threshold = thres;}
     void set_sparsity_number_neighbors(int nbr_ngb){_sparsity_number_neighbors = nbr_ngb;}
@@ -152,6 +154,29 @@ private:
     int _nearest_neighbors; //number nearest neighbors for sparsity computation
     // std::vector<double> _sparsity_scores;
     int _sparsity_number_neighbors = 0;
+
+    void _compute_sparsity_score(const T& solution){
+        std::vector<D> distances;
+        for(const T &ind: this->_solutions){
+            if(ind->get_morph_genome()->id() == solution->get_morph_genome()->id())
+                continue;
+            distances.push_back(_distance_fct(ind,solution));
+        }
+        std::vector<size_t> indices(distances.size());
+        std::iota(indices.begin(),indices.end(),0);
+        std::sort(indices.begin(),indices.end(),[&](size_t i,size_t j){return distances[i] < distances[j];}); // Sorting distances
+        double sparsity_score = 0;
+        size_t nbr_ngb_ = std::min(static_cast<size_t>(_sparsity_number_neighbors),distances.size());
+        solution->nn_distances.clear();
+        solution->nn_distances.resize(nbr_ngb_);
+        for(size_t i = 0; i < nbr_ngb_; i++){
+            solution->nn_distances[i] = distances[indices[i]];
+            sparsity_score += static_cast<double>(distances[indices[i]]);
+            this->_solutions[indices[i]]->update_sparsity_score(distances[indices[i]]);
+        }
+        solution->set_sparsity_score(sparsity_score/static_cast<double>(nbr_ngb_));
+    }
+
 };
 
 
