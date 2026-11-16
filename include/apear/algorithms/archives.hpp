@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <functional>
 #include <stdexcept>
 #include <map>
@@ -91,15 +92,21 @@ public:
         : Archive<T>(comparator,selector), _threshold(threshold), _distance_fct(dist_fct),_sparsity_number_neighbors(nbr_ngb){}
 
     bool add_solution(const T& solution) override{
+        std::cout << "add_solution with archive size " << this->_solutions.size() << std::endl;
         if(this->_solutions.empty()){
             this->_solutions.push_back(solution);
             return true;
         }
+
         std::vector<D> distances(this->_solutions.size());
         // Comparing with archive
-        for(size_t i = 0; i != this->_solutions.size(); i++){
-            distances[i] = _distance_fct(this->_solutions[i],solution);
-        }
+        tbb::parallel_for(tbb::blocked_range<size_t>(0,distances.size()),
+                          [&](tbb::blocked_range<size_t> r){
+            for(size_t i = r.begin(); i != r.end(); ++i)
+            {
+                distances[i] = _distance_fct(this->_solutions[i],solution);
+            }
+        });
 
         std::vector<size_t> indices(distances.size());
         std::iota(indices.begin(),indices.end(),0);
