@@ -72,7 +72,6 @@ protected:
     comparator_t _comparator; //return true if the first argument as higher quality than the second
     std::vector<T> _solutions;
     typename selectors::selector_t<T> _selector;
-
 };
 
 /**
@@ -158,7 +157,6 @@ public:
 private:
     D _threshold;
     distance_fct_t _distance_fct;
-    int _nearest_neighbors; //number nearest neighbors for sparsity computation
     // std::vector<double> _sparsity_scores;
     int _sparsity_number_neighbors = 0;
 
@@ -196,6 +194,7 @@ template<typename T>
 class GridArchive: public Archive<T> {
 public:
     using comparator_t = typename Archive<T>::comparator_t;
+    using descriptor_t = std::function<std::vector<double>(const T&)>;
 
     GridArchive(): Archive<T>(){}
     GridArchive(const std::vector<int>& bins, const std::vector<std::tuple<double,double>>& boundaries,
@@ -208,7 +207,8 @@ public:
         _indices.clear();
     }
     bool add_solution(const T& solution) override{
-        std::vector<double> descriptor = solution.descriptor;
+        solution->set_descriptors(_descriptor_fct(solution));
+        std::vector<double> descriptor = solution->get_descriptors();
         if (descriptor.size() != _dimensions) {
             return false; // Descriptor dimension mismatch
         }
@@ -244,6 +244,8 @@ private:
     std::vector<int> _bins; // Number of bins per dimension
     std::vector<std::tuple<double,double>> _boundaries; // Min and max for each dimension
     std::map<std::vector<int>,int> _indices; // Matrix of indices organised as a multi-dimensional grid
+    descriptor_t _descriptor_fct;
+
 };
 
 /**
@@ -251,14 +253,15 @@ private:
 * The type T of solution require a publicly available descriptor member of type std::vector<double>
 */
 template<typename T>
-class InfinteGridArchive: public Archive<T> {
+class InfiniteGridArchive: public Archive<T> {
 public:
     using comparator_t = typename Archive<T>::comparator_t;
+    using descriptor_t = std::function<std::vector<double>(const T&)>;
 
-    InfinteGridArchive(): Archive<T>(){}
-    InfinteGridArchive(const std::vector<double>& intervals,comparator_t comparator,
+    InfiniteGridArchive(): Archive<T>(){}
+    InfiniteGridArchive(const std::vector<double>& intervals,comparator_t comparator, descriptor_t descriptor_fct,
                        typename selectors::selector_t<T> selector)
-        : Archive<T>(comparator,selector), _intervals(intervals){
+        : Archive<T>(comparator,selector), _descriptor_fct(descriptor_fct), _intervals(intervals){
         _dimensions = intervals.size();
     }
     void reset() override {
@@ -266,26 +269,20 @@ public:
         _indices.clear();
     }
     bool add_solution(const T& solution) override{
-        std::vector<double> descriptor = solution.descriptor;
+        solution->set_descriptors(_descriptor_fct(solution));
+        std::vector<double> descriptor = solution->get_descriptors();
         if (descriptor.size() != _dimensions) {
             return false; // Descriptor dimension mismatch
         }
         std::vector<int> index(_dimensions);
-        for (int i = 0; i < _dimensions; ++i) {
-            // double min_bound = std::get<0>(_boundaries[i]);
-            // double max_bound = std::get<1>(_boundaries[i]);
-            // if (descriptor[i] < min_bound || descriptor[i] > max_bound) {
-            //     return false; // Descriptor out of bounds
-            // }
-            // double normalized = (descriptor[i] - min_bound) / (max_bound - min_bound);
-            // index[i] = std::min(static_cast<int>(normalized * _bins[i]), _bins[i] - 1);
-        }
+        for (int i = 0; i < _dimensions; ++i)
+            index[i] = static_cast<int>(std::floor(descriptor[i] / _intervals[i]));
 
         if (_indices.find(index) == _indices.end()) {
             this->_solutions.push_back(solution);
             _indices[index] = static_cast<int>(this->_solutions.size()-1);
             return true;
-        }else if(_comparator(solution, this->_solutions[_indices[index]])) {
+        }else if(this->_comparator(solution, this->_solutions[_indices[index]])) {
             this->_solutions[_indices[index]] = solution;
             return true;
 
@@ -301,6 +298,7 @@ private:
     int _dimensions; // Number of dimensions
     std::vector<double> _intervals; // intervals used to discretize each dimension
     std::map<std::vector<int>,int> _indices; // Matrix of indices organised as a multi-dimensional grid
+    descriptor_t _descriptor_fct;
 };
 
 
