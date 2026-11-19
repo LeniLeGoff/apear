@@ -21,7 +21,7 @@ public:
     using IndPtr = std::shared_ptr<ind_t>;
     typedef std::unique_ptr<EA> Ptr;
     typedef std::unique_ptr<const EA> ConstPtr;
-
+    using post_eval_fct_t = std::function<void(std::vector<IndPtr>&)>;
     /**
      * @brief default constructor
      */
@@ -36,12 +36,17 @@ public:
      */
     virtual void init() = 0;
 
+
     /**
      * @brief Update method is called after each evaluation of an individual.
-     * @return If the algorithm can continue to the next ind
+     * @return If the algorithm can continue
      */
     virtual bool update() = 0;
-
+    /**
+     * @brief generate the next population to be evaluated. called after update.
+     * @return if the algorithm can continue
+     */
+    virtual bool next_population_generation() = 0;
 
     /**
      * @brief ending condition of the algorithm
@@ -57,7 +62,7 @@ public:
     const misc::RandNum::Ptr get_randomNum() const {return _rand_num;}
     void set_randomNum(const misc::RandNum::Ptr& rn){_rand_num = rn;}
     void set_parameters(const settings::ParametersMapPtr& param){_parameters = param;}
-
+    void set_post_eval_op(const post_eval_fct_t& pef){_post_eval_fct = pef;}
 protected:
     std::vector<IndPtr> _eval_queue;
     std::vector<IndPtr> _evaluated;
@@ -66,6 +71,10 @@ protected:
     ///random number generator for EA
     misc::RandNum::Ptr _rand_num;
     int _highest_id = 0; //highest id of individual generated so far.
+    post_eval_fct_t _post_eval_fct = [](std::vector<IndPtr>&){};
+    void _post_eval_op(){
+        _post_eval_fct(_evaluated);
+    }
 };
 
 
@@ -101,7 +110,6 @@ public:
 
         _number_evaluations += this->evaluated().size();
 
-        int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
         //update the best individual
         double best_obj;
         if(_best_ind == nullptr)
@@ -113,6 +121,12 @@ public:
                 _best_ind = ind;
             }
         }
+        return true;
+    }
+
+    bool next_population_generation() override{
+        int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
+
         //fill up the evaluation queue with offspring of the best individual
         while(this->eval_queue().size() < pop_size){
             IndPtr new_ind = std::make_shared<ind_t>(*_best_ind);
@@ -120,9 +134,9 @@ public:
             this->_eval_queue.push_back(new_ind);
 
         }
-        this->_evaluated.clear();
         return true;
     }
+
     bool is_finish() override{
         if(_number_evaluations >= settings::getParameter<settings::Integer>(this->_parameters,"#maxNbrEval").value)
             return true;

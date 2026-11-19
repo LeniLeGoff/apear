@@ -153,9 +153,12 @@ public:
             _ea->evaluated() = _evaluated;
             _evaluated.clear();
         }
+
+        _ea->update();
         if(!_ea->evaluated().empty())
             save_logs();
-        _ea->update();
+        _ea->evaluated().clear();
+        _ea->next_population_generation();
         if(_ea->is_finish()){
             if(verbose)
             {

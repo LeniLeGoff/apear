@@ -37,11 +37,11 @@ public:
         int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
         for(IndPtr& ind: this->_evaluated){
             if(ind->get_objectives()[0] == 0){
-                ind = std::make_shared<ind_t>(this->_rand_num,this->_parameters);
-                ind->init();
-                ind->random();
-                ind->set_id(this->_highest_id++);
-                this->_eval_queue.push_back(ind);
+                IndPtr new_ind = std::make_shared<ind_t>(this->_rand_num,this->_parameters);
+                new_ind->init();
+                new_ind->random();
+                new_ind->set_id(this->_highest_id++);
+                this->_eval_queue.push_back(new_ind);
             }else{
                 _nbr_eval++;
                 _parent_pool.push_back(ind);
@@ -49,12 +49,16 @@ public:
             if(_parent_pool.size() > pop_size)
                 _remove_worst_parent();
         }
-        this->evaluated().clear();
+        return true;
+    }
 
+    bool next_population_generation() override{
+        int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
         if(_parent_pool.size() >= pop_size)
             _reproduction();
         return true;
     }
+
     bool is_finish() override{
         if(_nbr_eval >= settings::getParameter<settings::Integer>(this->_parameters,"#maxNbrEval").value)
             return true;

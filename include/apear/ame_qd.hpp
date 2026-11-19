@@ -42,23 +42,27 @@ public:
         bool archive_updated = false;
         for(IndPtr& ind: this->_evaluated){
             if(ind->get_objectives()[0] == 0){
-                ind = std::make_shared<ind_t>(this->_rand_num,this->_parameters);
-                ind->init();
-                ind->random();
-                ind->set_id(this->_highest_id++);
-                this->_eval_queue.push_back(ind);
+                IndPtr new_ind = std::make_shared<ind_t>(this->_rand_num,this->_parameters);
+                new_ind->init();
+                new_ind->random();
+                new_ind->set_id(this->_highest_id++);
+                this->_eval_queue.push_back(new_ind);
             }else{
                 _nbr_eval++;
                 archive_updated = archive_updated || _parent_pool.add_solution(ind);
             }
         }
+        this->_post_eval_op();
 
-        this->evaluated().clear();
         if(archive_updated)
             _parent_pool.update();
+    }
+
+    bool next_population_generation() override{
         _reproduction();
         return true;
     }
+
     bool is_finish() override{
         if(_nbr_eval >= settings::getParameter<settings::Integer>(this->_parameters,"#maxNbrEval").value)
             return true;
