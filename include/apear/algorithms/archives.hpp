@@ -41,6 +41,7 @@ public:
 
     virtual bool add_solution(const T& solution){
         _solutions.push_back(solution);
+        return true;
     }
 
     void select_solution(const misc::RandNum::Ptr &rand_num, T& selection){

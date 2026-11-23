@@ -56,6 +56,7 @@ public:
 
         if(archive_updated)
             _parent_pool.update();
+        return true;
     }
 
     bool next_population_generation() override{
