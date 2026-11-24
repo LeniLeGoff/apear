@@ -23,7 +23,7 @@ public:
     {}
 
     void init() override{
-        int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
+        size_t pop_size = static_cast<size_t>(settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value);
         this->_eval_queue.resize(pop_size);
         for(IndPtr& ind: this->_eval_queue){
             ind = std::make_shared<ind_t>(this->_rand_num,this->_parameters);
@@ -34,7 +34,7 @@ public:
     }
 
     bool update() override{
-        int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
+        size_t pop_size = static_cast<size_t>(settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value);
         for(IndPtr& ind: this->_evaluated){
             if(ind->get_objectives()[0] == 0){
                 IndPtr new_ind = std::make_shared<ind_t>(this->_rand_num,this->_parameters);
@@ -53,7 +53,7 @@ public:
     }
 
     bool next_population_generation() override{
-        int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
+        size_t pop_size = static_cast<size_t>(settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value);
         if(_parent_pool.size() >= pop_size)
             _reproduction();
         return true;
@@ -72,8 +72,8 @@ private:
     int _nbr_eval = 0;
 
     void _reproduction(){
-        int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
-        int tournament_size = settings::getParameter<settings::Integer>(this->_parameters,"#tournamentSize").value;
+        size_t pop_size = static_cast<size_t>(settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value);
+        size_t tournament_size = static_cast<size_t>(settings::getParameter<settings::Integer>(this->_parameters,"#tournamentSize").value);
 
         while(this->_eval_queue.size() < pop_size){
             //Random selection of indexes without duplicate
@@ -127,7 +127,7 @@ private:
     }
 
     void _remove_worst_parent(){
-        int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
+        size_t pop_size = static_cast<size_t>(settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value);
         if(_parent_pool.size() <= pop_size)
             return;
 

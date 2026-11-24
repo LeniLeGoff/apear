@@ -60,7 +60,7 @@ public:
             update_simulators();
     }
     void individuals_distribution(){
-        for(int i = 0; i < _ind_vec.size(); i++){
+        for(size_t i = 0; i < _ind_vec.size(); i++){
             if(_eval_queue.empty() || _ind_vec[i] != nullptr)
                 continue;
             int eval_order = settings::getParameter<settings::Integer>(_parameters,"#evaluationOrder").value;
@@ -183,7 +183,7 @@ public:
             std::cerr << "Asynch Dealer ERROR: please init the dealer before setting the environment" << std::endl;
             return;
         }
-        for(int i = 0; i < _simulators.size(); i++)
+        for(size_t i = 0; i < _simulators.size(); i++)
             _environments.push_back(std::make_shared<env_t>(args...));
     }
 

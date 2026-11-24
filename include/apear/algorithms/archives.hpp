@@ -262,7 +262,7 @@ public:
     InfiniteGridArchive(): Archive<T>(){}
     InfiniteGridArchive(const std::vector<double>& intervals,comparator_t comparator, descriptor_t descriptor_fct,
                        typename selectors::selector_t<T> selector)
-        : Archive<T>(comparator,selector), _descriptor_fct(descriptor_fct), _intervals(intervals){
+        : Archive<T>(comparator,selector), _intervals(intervals), _descriptor_fct(descriptor_fct) {
         _dimensions = intervals.size();
     }
     void reset() override {
@@ -272,7 +272,7 @@ public:
     bool add_solution(const T& solution) override{
         solution->set_descriptors(_descriptor_fct(solution));
         std::vector<double> descriptor = solution->get_descriptors();
-        if (descriptor.size() != _dimensions) {
+        if (descriptor.size() != static_cast<size_t>(_dimensions)) {
             return false; // Descriptor dimension mismatch
         }
         std::vector<int> index(_dimensions);

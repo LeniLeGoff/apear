@@ -79,7 +79,7 @@ private:
     void _reproduction(){
         if(_parent_pool.size() == 0)
             return;
-        int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
+        size_t pop_size = static_cast<size_t>(settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value);
         if(this->_eval_queue.size() >= pop_size)
             return;
         std::vector<IndPtr> parents(pop_size-this->_eval_queue.size());

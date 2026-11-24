@@ -125,7 +125,7 @@ public:
     }
 
     bool next_population_generation() override{
-        int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
+        size_t pop_size = static_cast<size_t>(settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value);
 
         //fill up the evaluation queue with offspring of the best individual
         while(this->eval_queue().size() < pop_size){
