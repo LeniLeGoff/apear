@@ -3,6 +3,7 @@ project(apear)
 
 include(GNUInstallDirs)
 add_compile_options("$<$<CONFIG:RELEASE>:-O3>$<$<CONFIG:DEBUG>:-O0>")
+add_compile_options(-Wall -Werror)
 
 find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
@@ -22,7 +23,6 @@ target_include_directories(apear PUBLIC
     # "/usr/include/eigen3"
 )
 target_link_libraries(apear Eigen3::Eigen tbb  "${TORCH_LIBRARIES}") #Boost::serialization Boost::filesystem)
-target_compile_options(apear PRIVATE -Wall -Werror)
 
 
 
