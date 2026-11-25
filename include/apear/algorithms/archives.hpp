@@ -44,6 +44,10 @@ public:
         return true;
     }
 
+    void push_back(const T& solution){
+        this->_solutions.push_back(solution);
+    }
+
     void select_solution(const misc::RandNum::Ptr &rand_num, T& selection){
         std::vector<T> select(1);
         _selector(_solutions,rand_num,selection);
@@ -128,9 +132,7 @@ public:
         return false; //new solution not added
     }
 
-    void push_back(const T& solution){
-        this->_solutions.push_back(solution);
-    }
+
 
     void update() override{
     }
