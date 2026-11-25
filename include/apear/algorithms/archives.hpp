@@ -272,6 +272,7 @@ public:
         _indices.clear();
     }
     bool add_solution(const T& solution) override{
+        std::cout << "add_solution with archive size " << this->_solutions.size() << std::endl;
         solution->set_descriptors(_descriptor_fct(solution));
         std::vector<double> descriptor = solution->get_descriptors();
         if (descriptor.size() != static_cast<size_t>(_dimensions)) {
@@ -284,6 +285,7 @@ public:
         if (_indices.find(index) == _indices.end()) {
             this->_solutions.push_back(solution);
             _indices[index] = static_cast<int>(this->_solutions.size()-1);
+            std::cout << "new solution added" << std::endl;
             return true;
         }else if(this->_comparator(solution, this->_solutions[_indices[index]])) {
             this->_solutions[_indices[index]] = solution;

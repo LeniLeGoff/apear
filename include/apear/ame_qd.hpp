@@ -49,7 +49,7 @@ public:
                 this->_eval_queue.push_back(new_ind);
             }else{
                 _nbr_eval++;
-                archive_updated = archive_updated || _parent_pool.add_solution(ind);
+                archive_updated = _parent_pool.add_solution(ind) || archive_updated;
             }
         }
         this->_post_eval_op();
