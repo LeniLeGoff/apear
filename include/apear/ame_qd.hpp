@@ -77,10 +77,12 @@ private:
     int _nbr_eval = 0;
 
     void _reproduction(){
+        int pop_size = settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value;
+        if(_nbr_eval < pop_size)
+            return;
         if(_parent_pool.size() == 0)
             return;
-        size_t pop_size = static_cast<size_t>(settings::getParameter<settings::Integer>(this->_parameters,"#populationSize").value);
-        if(this->_eval_queue.size() >= pop_size)
+        if(this->_eval_queue.size() >= static_cast<size_t>(pop_size))
             return;
         std::vector<IndPtr> parents(pop_size-this->_eval_queue.size());
         _parent_pool.select_solutions(pop_size-this->_eval_queue.size(),this->_rand_num,parents);
